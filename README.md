@@ -3,8 +3,11 @@
 ## Tests
 
 ```bash
-# run test using maven
+# run classical tests
 mvn test
+
+# run hadoop-unit tests
+mvn test -Dtest=PulsarStandaloneBootstrapIntegrationTest
 ```
 
 ## Configuration
