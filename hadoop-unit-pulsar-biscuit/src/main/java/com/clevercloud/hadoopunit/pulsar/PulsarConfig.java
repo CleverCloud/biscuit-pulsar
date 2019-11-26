@@ -25,5 +25,11 @@ public class PulsarConfig {
 
     public static final String PULSAR_IP_CLIENT_KEY = "pulsar.client.ip";
 
+    public static final String PULSAR_AUTHENTICATION_ENABLED = "true";
+    public static final String PULSAR_AUTHENTICATION_PROVIDERS = "com.clevercloud.biscuitpulsar.BiscuitAuthenticationPlugin";
+    public static final String PULSAR_AUTHORIZATION_ENABLED = "true";
+    public static final String PULSAR_AUTHORIZATION_PROVIDER = "com.clevercloud.biscuitpulsar.BiscuitAuthorizationPlugin";
+    public static final String PULSAR_BISCUIT_ROOT_KEY = "da905388864659eb785877a319fbc42c48e2f8a40af0c5baea0ef8ff7c795253";
+
     private PulsarConfig() {}
 }
