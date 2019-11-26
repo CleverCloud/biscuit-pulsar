@@ -1,8 +1,6 @@
 package com.clevercloud.biscuitpulsar;
 
-import fr.jetoile.hadoopunit.HadoopBootstrap;
 import fr.jetoile.hadoopunit.HadoopUnitConfig;
-import fr.jetoile.hadoopunit.exception.BootstrapException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -14,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
-import fr.jetoile.hadoopunit.component.PulsarStandaloneConfig;
 
 public class PulsarStandaloneBootstrapIntegrationTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(PulsarStandaloneBootstrapIntegrationTest.class);
@@ -22,27 +19,19 @@ public class PulsarStandaloneBootstrapIntegrationTest {
   private static final int NUM_OF_MESSAGES = 100;
   static private Configuration configuration;
 
+  private static final String PULSAR_IP_CLIENT_KEY = "pulsar.client.ip";
+  private static final String PULSAR_PORT_KEY = "pulsar.port";
+  private static final String PULSAR_HTTP_PORT_KEY = "pulsar.http.port";
+
   @BeforeClass
-  public static void setup() throws BootstrapException {
-    HadoopBootstrap.INSTANCE.startAll();
-
-    try {
+  public static void setup() throws ConfigurationException {
       configuration = new PropertiesConfiguration(HadoopUnitConfig.DEFAULT_PROPS_FILE);
-    } catch (ConfigurationException e) {
-      throw new BootstrapException("bad config", e);
-    }
-  }
-
-
-  @AfterClass
-  public static void tearDown() throws BootstrapException {
-    HadoopBootstrap.INSTANCE.stopAll();
   }
 
   @Test
   public void pulsarShouldStart() throws PulsarClientException {
     final PulsarClient client = PulsarClient.builder()
-      .serviceUrl("pulsar://" + configuration.getString(PulsarStandaloneConfig.PULSAR_IP_KEY) + ":" + configuration.getInt(PulsarStandaloneConfig.PULSAR_PORT_KEY))
+      .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
       .build();
 
     final Producer<String> producer = client.newProducer(Schema.STRING)
