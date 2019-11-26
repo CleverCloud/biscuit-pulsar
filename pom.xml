@@ -1,144 +1,159 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <grpc.version>1.18.0</grpc.version>
-    <hadoop-unit.version>3.6</hadoop-unit.version>
-  </properties>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.clevercloud</groupId>
-  <artifactId>biscuit-pulsar</artifactId>
-  <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
-  <name>biscuit-pulsar</name>
-  <url>http://maven.apache.org</url>
-
-  <dependencies>
-  <dependency>
-    <groupId>fr.jetoile.hadoop</groupId>
-    <artifactId>hadoop-unit-pulsar-standalone</artifactId>
-    <version>${hadoop-unit.version}</version>
-    <scope>test</scope>
-  </dependency>
-  <!-- https://mvnrepository.com/artifact/junit/junit -->
-  <dependency>
-    <groupId>junit</groupId>
-    <artifactId>junit</artifactId>
-    <version>4.12</version>
-    <scope>test</scope>
-  </dependency>
-  <!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
-  <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <version>3.14.0</version>
-      <scope>test</scope>
-  </dependency>
-  <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
-  <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.2.3</version>
-      <scope>test</scope>
-  </dependency>
-  <!-- https://mvnrepository.com/artifact/io.vavr/vavr -->
-  <dependency>
-    <groupId>io.vavr</groupId>
-    <artifactId>vavr</artifactId>
-    <version>0.10.2</version>
-  </dependency>
-  <!-- https://mvnrepository.com/artifact/org.apache.pulsar/pulsar-broker -->
-  <dependency>
-    <groupId>org.apache.pulsar</groupId>
-    <artifactId>pulsar-broker</artifactId>
-    <version>2.4.1</version>
-  </dependency>
-  <dependency>
-    <groupId>io.grpc</groupId>
-    <artifactId>grpc-all</artifactId>
-    <version>${grpc.version}</version>
-  </dependency>
-  <dependency>
-    <groupId>io.grpc</groupId>
-    <artifactId>grpc-core</artifactId>
-    <version>${grpc.version}</version>
-  </dependency>
-  <dependency>
-    <groupId>io.grpc</groupId>
-    <artifactId>grpc-protobuf-lite</artifactId>
-    <version>${grpc.version}</version>
-  </dependency>
-  <dependency>
     <groupId>com.clevercloud</groupId>
-    <artifactId>biscuit-java</artifactId>
-    <version>0.1.0</version>
-  </dependency>
-  </dependencies>
+    <artifactId>biscuit-pulsar</artifactId>
+    <version>1.0-SNAPSHOT</version>
 
-  <build>
-  <plugins>
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-surefire-plugin</artifactId>
-      <version>2.22.2</version>
-      <configuration>
-        <excludes>
-          <exclude>**/*IntegrationTest.java</exclude>
-        </excludes>
-      </configuration>
-      <executions>
-        <execution>
-          <id>integration-test</id>
-          <goals>
-            <goal>test</goal>
-          </goals>
-          <phase>integration-test</phase>
-          <configuration>
-            <excludes>
-              <exclude>none</exclude>
-            </excludes>
-            <includes>
-              <include>**/*IntegrationTest.java</include>
-            </includes>
-          </configuration>
-        </execution>
-      </executions>
-    </plugin>
-    <plugin>
-      <artifactId>hadoop-unit-maven-plugin</artifactId>
-      <groupId>fr.jetoile.hadoop</groupId>
-      <version>${hadoop-unit.version}</version>
-      <executions>
-        <execution>
-          <id>start</id>
-          <goals>
-            <goal>embedded-start</goal>
-          </goals>
-          <phase>pre-integration-test</phase>
-        </execution>
-        <execution>
-          <id>embedded-stop</id>
-          <goals>
-            <goal>embedded-stop</goal>
-          </goals>
-          <phase>post-integration-test</phase>
-        </execution>
-      </executions>
-      <configuration>
-        <components>
-          <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
-            <componentName>PULSAR</componentName>
+    <name>biscuit-pulsar</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <grpc.version>1.18.0</grpc.version>
+        <hadoop-unit.version>3.6</hadoop-unit.version>
+        <biscuit-java.version>0.1.0</biscuit-java.version>
+        <pulsar-broker-common.version>2.4.1</pulsar-broker-common.version>
+        <logback-classic.version>1.2.3</logback-classic.version>
+        <vavr.version>0.10.2</vavr.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback-classic.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vavr</groupId>
+            <artifactId>vavr</artifactId>
+            <version>${vavr.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-broker-common</artifactId>
+            <version>${pulsar-broker-common.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.clevercloud</groupId>
+            <artifactId>biscuit-java</artifactId>
+            <version>${biscuit-java.version}</version>
+        </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/junit/junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.14.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>fr.jetoile.hadoop</groupId>
-            <artifactId>hadoop-unit-pulsar-standalone</artifactId>
+            <artifactId>hadoop-unit-commons</artifactId>
             <version>${hadoop-unit.version}</version>
-            <mainClass>fr.jetoile.hadoopunit.component.PulsarStandaloneBootstrap</mainClass>
-          </componentArtifact>
-        </components>
-      </configuration>
-    </plugin>
-  </plugins>
-  </build>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-client</artifactId>
+            <version>${pulsar-broker-common.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                        <configuration>
+                            <excludes>
+                                <exclude>none</exclude>
+                            </excludes>
+                            <includes>
+                                <include>**/*IntegrationTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>hadoop-unit-maven-plugin</artifactId>
+                <groupId>fr.jetoile.hadoop</groupId>
+                <version>${hadoop-unit.version}</version>
+                <executions>
+                    <execution>
+                        <id>start</id>
+                        <goals>
+                            <goal>embedded-start</goal>
+                        </goals>
+                        <phase>pre-integration-test</phase>
+                    </execution>
+                    <execution>
+                        <id>embedded-stop</id>
+                        <goals>
+                            <goal>embedded-stop</goal>
+                        </goals>
+                        <phase>post-integration-test</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <components>
+                        <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
+                            <componentName>ZOOKEEPER</componentName>
+                            <artifactId>hadoop-unit-zookeeper</artifactId>
+                            <groupId>fr.jetoile.hadoop</groupId>
+                            <version>${hadoop-unit.version}</version>
+                            <mainClass>fr.jetoile.hadoopunit.component.ZookeeperBootstrap</mainClass>
+                        </componentArtifact>
+                        <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
+                            <componentName>BOOKKEEPER</componentName>
+                            <artifactId>hadoop-unit-bookkeeper</artifactId>
+                            <groupId>fr.jetoile.hadoop</groupId>
+                            <version>${hadoop-unit.version}</version>
+                            <mainClass>fr.jetoile.hadoopunit.component.BookkeeperBootstrap</mainClass>
+                        </componentArtifact>
+                        <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
+                            <componentName>PULSAR</componentName>
+                            <artifactId>hadoop-unit-pulsar</artifactId>
+                            <groupId>fr.jetoile.hadoop</groupId>
+                            <version>${hadoop-unit.version}</version>
+                            <mainClass>fr.jetoile.hadoopunit.component.PulsarBootstrap</mainClass>
+                        </componentArtifact>
+                    </components>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
