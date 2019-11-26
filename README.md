@@ -18,7 +18,7 @@ copy jars (from `build/libs`) to pulsar's `/lib` directory:
 - vavr-match
 - protobuf
 - commons-codec
-- biscuit
+- biscuit-java
 - curve25519-elisabeth
 
 ```
