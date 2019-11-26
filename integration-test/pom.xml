@@ -161,11 +161,11 @@
               <mainClass>fr.jetoile.hadoopunit.component.BookkeeperBootstrap</mainClass>
             </componentArtifact>
             <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
-              <componentName>PULSAR</componentName>
-              <artifactId>hadoop-unit-pulsar</artifactId>
-              <groupId>fr.jetoile.hadoop</groupId>
-              <version>${hadoop-unit.version}</version>
-              <mainClass>fr.jetoile.hadoopunit.component.PulsarBootstrap</mainClass>
+              <componentName>PULSAR_BISCUIT</componentName>
+              <artifactId>hadoop-unit-pulsar-biscuit</artifactId>
+              <groupId>com.clevercloud</groupId>
+              <version>1.0-SNAPSHOT</version>
+              <mainClass>com.clevercloud.hadoopunit.pulsar.PulsarBootstrap</mainClass>
             </componentArtifact>
           </components>
         </configuration>
