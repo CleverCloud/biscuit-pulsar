@@ -49,6 +49,7 @@ public class PulsarStandaloneBootstrapIntegrationTest {
     for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
       producer.send("Hello_" + i);
     }
+    producer.close();
 
     for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
       final Message<String> message = consumer.receive(1, TimeUnit.SECONDS);
@@ -56,7 +57,6 @@ public class PulsarStandaloneBootstrapIntegrationTest {
       assertThat(message.getValue()).isEqualTo("Hello_" + i);
     }
 
-    producer.close();
     consumer.close();
     client.close();
   }
