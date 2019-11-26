@@ -1,0 +1,13 @@
+[package]
+name = "create-token"
+version = "0.1.0"
+authors = ["Geoffroy Couprie <geo.couprie@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+biscuit = { git = "https://github.com/clevercloud/biscuit-rust" }
+rand = "0.6"
+hex = "0.4.0"
+base64 = "0.11.0"
