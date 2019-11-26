@@ -51,6 +51,12 @@ public class PulsarBootstrap implements Bootstrap {
   private String tmpDirPath;
   private int streamerStoragePort;
 
+  private String authenticationEnabled;
+  private String authenticationProviders;
+  private String authorizationEnabled;
+  private String authorizationProviders;
+  private String biscuitRootKey;
+
   private int zookeeperPort;
   private String zookeeperHost;
 
@@ -104,6 +110,12 @@ public class PulsarBootstrap implements Bootstrap {
     tmpDirPath = getTmpDirPath(configuration, PulsarConfig.PULSAR_TEMP_DIR_KEY);
     streamerStoragePort = configuration.getInt(PulsarConfig.PULSAR_STREAMER_STORAGE_PORT_KEY);
 
+    authenticationEnabled = configuration.getString(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED);
+    authenticationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS);
+    authorizationEnabled = configuration.getString(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED);
+    authorizationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER);
+    biscuitRootKey = configuration.getString(PulsarConfig.PULSAR_BISCUIT_ROOT_KEY);
+
     zookeeperHost = configuration.getString(ZOOKEEPER_HOST_CLIENT_KEY);
     zookeeperPort = configuration.getInt(ZOOKEEPER_PORT_KEY);
   }
@@ -128,6 +140,23 @@ public class PulsarBootstrap implements Bootstrap {
     if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_STREAMER_STORAGE_PORT_KEY))) {
       streamerStoragePort = Integer.parseInt(configs.get(PulsarConfig.PULSAR_STREAMER_STORAGE_PORT_KEY));
     }
+
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED))) {
+      authenticationEnabled = configs.get(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED);
+    }
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS))) {
+      authenticationProviders = configs.get(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS);
+    }
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED))) {
+      authorizationEnabled = configs.get(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED);
+    }
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER))) {
+      authorizationProviders = configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER);
+    }
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_BISCUIT_ROOT_KEY))) {
+      biscuitRootKey = configs.get(PulsarConfig.PULSAR_BISCUIT_ROOT_KEY);
+    }
+
     if (StringUtils.isNotEmpty(configs.get(ZOOKEEPER_PORT_KEY))) {
       zookeeperPort = Integer.parseInt(configs.get(ZOOKEEPER_PORT_KEY));
     }
