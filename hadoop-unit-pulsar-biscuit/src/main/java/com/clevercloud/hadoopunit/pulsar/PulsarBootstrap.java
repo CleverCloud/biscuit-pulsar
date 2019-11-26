@@ -40,6 +40,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Collections;
 
 public class PulsarBootstrap implements Bootstrap {
   static final private Logger LOGGER = LoggerFactory.getLogger(PulsarBootstrap.class);
@@ -55,7 +56,6 @@ public class PulsarBootstrap implements Bootstrap {
   private String authenticationProviders;
   private String authorizationEnabled;
   private String authorizationProviders;
-  private String biscuitRootKey;
 
   private int zookeeperPort;
   private String zookeeperHost;
@@ -114,7 +114,6 @@ public class PulsarBootstrap implements Bootstrap {
     authenticationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS);
     authorizationEnabled = configuration.getString(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED);
     authorizationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER);
-    biscuitRootKey = configuration.getString(PulsarConfig.PULSAR_BISCUIT_ROOT_KEY);
 
     zookeeperHost = configuration.getString(ZOOKEEPER_HOST_CLIENT_KEY);
     zookeeperPort = configuration.getInt(ZOOKEEPER_PORT_KEY);
@@ -153,9 +152,6 @@ public class PulsarBootstrap implements Bootstrap {
     if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER))) {
       authorizationProviders = configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER);
     }
-    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_BISCUIT_ROOT_KEY))) {
-      biscuitRootKey = configs.get(PulsarConfig.PULSAR_BISCUIT_ROOT_KEY);
-    }
 
     if (StringUtils.isNotEmpty(configs.get(ZOOKEEPER_PORT_KEY))) {
       zookeeperPort = Integer.parseInt(configs.get(ZOOKEEPER_PORT_KEY));
@@ -181,6 +177,10 @@ public class PulsarBootstrap implements Bootstrap {
     serviceConfiguration.setManagedLedgerDefaultWriteQuorum(1);
     serviceConfiguration.setManagedLedgerDefaultAckQuorum(1);
     serviceConfiguration.setAllowAutoTopicCreation(true);
+    serviceConfiguration.setAuthenticationEnabled(true);
+    serviceConfiguration.setAuthenticationProviders(Collections.singleton(authenticationProviders));
+    serviceConfiguration.setAuthorizationEnabled(true);
+    serviceConfiguration.setAuthorizationProvider(authorizationProviders);
 
     workerConfig = new WorkerConfig();
 
