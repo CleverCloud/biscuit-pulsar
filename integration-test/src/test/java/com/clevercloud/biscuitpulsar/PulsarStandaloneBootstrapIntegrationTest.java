@@ -25,7 +25,7 @@ public class PulsarStandaloneBootstrapIntegrationTest {
 
   @BeforeClass
   public static void setup() throws ConfigurationException {
-      configuration = new PropertiesConfiguration(HadoopUnitConfig.DEFAULT_PROPS_FILE);
+    configuration = new PropertiesConfiguration(HadoopUnitConfig.DEFAULT_PROPS_FILE);
   }
 
   @Test
