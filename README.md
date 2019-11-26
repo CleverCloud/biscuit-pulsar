@@ -1,4 +1,4 @@
-# Apache Pulsar Biscuit authentication plugin
+# Pulsar Biscuit Authentication & Authorization plugins
 
 ## Tests
 
