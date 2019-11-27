@@ -8,6 +8,6 @@ public class BiscuitAuthenticationPluginTest {
     public void testGetAuthMethodName() {
         BiscuitAuthenticationPlugin authenticationPlugin = new BiscuitAuthenticationPlugin();
         System.out.println(authenticationPlugin.getAuthMethodName());
-        assertEquals("token", authenticationPlugin.getAuthMethodName());
+        assertEquals("biscuit", authenticationPlugin.getAuthMethodName());
     }
 }

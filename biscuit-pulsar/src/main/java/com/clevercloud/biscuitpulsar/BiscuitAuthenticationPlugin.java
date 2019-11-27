@@ -45,7 +45,7 @@ public class BiscuitAuthenticationPlugin implements AuthenticationProvider {
   }
 
   public String getAuthMethodName() {
-    return "token";
+    return "biscuit";
   }
 
   public String authenticate(AuthenticationDataSource authenticationDataSource) throws AuthenticationException {
