@@ -208,7 +208,7 @@ public class PulsarBootstrap implements Bootstrap {
       serviceConfiguration.setProperties(properties);
     }
 
-    workerConfig = new WorkerConfig();
+    /*workerConfig = new WorkerConfig();
 
     workerConfig.setPulsarServiceUrl("pulsar://127.0.0.1:" + port);
     workerConfig.setPulsarWebServiceUrl("http://127.0.0.1:" + httpPort);
@@ -238,11 +238,11 @@ public class PulsarBootstrap implements Bootstrap {
     workerConfig.setThreadContainerFactory(new WorkerConfig.ThreadContainerFactory().setThreadGroupName("functions-thread"));
     workerConfig.setStateStorageServiceUrl("bk://127.0.0.1:" + streamerStoragePort);
 
-    functionsWorkerService = new WorkerService(workerConfig);
+    functionsWorkerService = new WorkerService(workerConfig);*/
 
     // init pulsar service
-    // pulsarService = new PulsarService(serviceConfiguration, Optional.empty());
-    pulsarService = new PulsarService(serviceConfiguration, Optional.ofNullable(functionsWorkerService));
+    pulsarService = new PulsarService(serviceConfiguration, Optional.empty());
+    //pulsarService = new PulsarService(serviceConfiguration, Optional.ofNullable(functionsWorkerService));
   }
 
   @Override
