@@ -22,7 +22,7 @@
 
     <logback-classic.version>1.2.3</logback-classic.version>
 
-    <hadoop-unit.version>3.6</hadoop-unit.version>
+    <hadoop-unit.version>3.7</hadoop-unit.version>
   </properties>
 
   <dependencies>
@@ -161,17 +161,19 @@
               <mainClass>fr.jetoile.hadoopunit.component.BookkeeperBootstrap</mainClass>
             </componentArtifact>
             <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
-              <componentName>PULSAR_BISCUIT</componentName>
-              <artifactId>hadoop-unit-pulsar-biscuit</artifactId>
-              <groupId>com.clevercloud</groupId>
-              <version>1.0-SNAPSHOT</version>
-              <mainClass>com.clevercloud.hadoopunit.pulsar.PulsarBootstrap</mainClass>
+              <componentName>PULSAR</componentName>
+              <artifactId>hadoop-unit-pulsar</artifactId>
+              <groupId>fr.jetoile.hadoop</groupId>
+              <version>${hadoop-unit.version}</version>
+              <mainClass>fr.jetoile.hadoopunit.component.PulsarBootstrap</mainClass>
               <properties>
+                <pulsar.extraClasspath>com.clevercloud:biscuit-pulsar:1.0-SNAPSHOT</pulsar.extraClasspath>
                 <pulsar.authentication.enabled>true</pulsar.authentication.enabled>
                 <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.BiscuitAuthenticationPlugin</pulsar.authentication.provider>
                 <pulsar.authorization.enabled>true</pulsar.authorization.enabled>
-                <pulsar.authorisztion.provider>com.clevercloud.biscuitpulsar.BiscuitAuthorizationPlugin</pulsar.authorisztion.provider>
+                <pulsar.authorization.provider>com.clevercloud.biscuitpulsar.BiscuitAuthorizationPlugin</pulsar.authorization.provider>
                 <pulsar.extra.conf>biscuitRootKey=da905388864659eb785877a319fbc42c48e2f8a40af0c5baea0ef8ff7c795253</pulsar.extra.conf>
+                <pulsar.worker.enabled>false</pulsar.worker.enabled>
               </properties>
             </componentArtifact>
           </components>

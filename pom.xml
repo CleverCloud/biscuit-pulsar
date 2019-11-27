@@ -10,7 +10,7 @@
   <name>biscuit-pulsar-parent</name>
 
   <modules>
-    <module>hadoop-unit-pulsar-biscuit</module>
+    <!--<module>hadoop-unit-pulsar-biscuit</module>-->
     <module>biscuit-pulsar</module>
     <module>integration-test</module>
   </modules>
@@ -27,7 +27,7 @@
 
     <logback-classic.version>1.2.3</logback-classic.version>
 
-    <hadoop-unit.version>3.6</hadoop-unit.version>
+    <hadoop-unit.version>3.7-SNAPSHOT</hadoop-unit.version>
   </properties>
 
   <dependencyManagement>
