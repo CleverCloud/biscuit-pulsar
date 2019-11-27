@@ -24,9 +24,11 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.PulsarService;
 import org.apache.pulsar.broker.ServiceConfiguration;
+import org.apache.pulsar.broker.authentication.AuthenticationService;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.apache.pulsar.common.configuration.PulsarConfigurationLoader;
 import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.TenantInfo;
@@ -37,10 +39,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Collections;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.clevercloud.hadoopunit.pulsar.PulsarConfig.PULSAR_EXTRA_CONF_KEY;
 
 public class PulsarBootstrap implements Bootstrap {
   static final private Logger LOGGER = LoggerFactory.getLogger(PulsarBootstrap.class);
@@ -52,10 +56,11 @@ public class PulsarBootstrap implements Bootstrap {
   private String tmpDirPath;
   private int streamerStoragePort;
 
-  private String authenticationEnabled;
+  private boolean authenticationEnabled;
   private String authenticationProviders;
-  private String authorizationEnabled;
+  private boolean authorizationEnabled;
   private String authorizationProviders;
+  private Map<String, String> extraConf = new HashMap<>();
 
   private int zookeeperPort;
   private String zookeeperHost;
@@ -110,10 +115,13 @@ public class PulsarBootstrap implements Bootstrap {
     tmpDirPath = getTmpDirPath(configuration, PulsarConfig.PULSAR_TEMP_DIR_KEY);
     streamerStoragePort = configuration.getInt(PulsarConfig.PULSAR_STREAMER_STORAGE_PORT_KEY);
 
-    authenticationEnabled = configuration.getString(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED);
-    authenticationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS);
-    authorizationEnabled = configuration.getString(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED);
-    authorizationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER);
+    authenticationEnabled = configuration.getBoolean(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED_KEY, false);
+    authenticationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS_KEY,"");
+    authorizationEnabled = configuration.getBoolean(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED_KEY, false);
+    authorizationProviders = configuration.getString(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER_KEY, "");
+
+    String[] extraConfsAsList = configuration.getStringArray(PULSAR_EXTRA_CONF_KEY);
+    extraConf = Arrays.asList(extraConfsAsList).stream().collect(Collectors.toMap(c -> c.split("=")[0], c -> c.split("=")[1]));
 
     zookeeperHost = configuration.getString(ZOOKEEPER_HOST_CLIENT_KEY);
     zookeeperPort = configuration.getInt(ZOOKEEPER_PORT_KEY);
@@ -140,17 +148,17 @@ public class PulsarBootstrap implements Bootstrap {
       streamerStoragePort = Integer.parseInt(configs.get(PulsarConfig.PULSAR_STREAMER_STORAGE_PORT_KEY));
     }
 
-    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED))) {
-      authenticationEnabled = configs.get(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED);
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED_KEY))) {
+        authenticationEnabled = Boolean.parseBoolean(configs.get(PulsarConfig.PULSAR_AUTHENTICATION_ENABLED_KEY));
     }
-    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS))) {
-      authenticationProviders = configs.get(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS);
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS_KEY))) {
+      authenticationProviders = configs.get(PulsarConfig.PULSAR_AUTHENTICATION_PROVIDERS_KEY);
     }
-    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED))) {
-      authorizationEnabled = configs.get(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED);
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED_KEY))) {
+        authorizationEnabled = Boolean.parseBoolean(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_ENABLED_KEY));
     }
-    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER))) {
-      authorizationProviders = configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER);
+    if (StringUtils.isNotEmpty(configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER_KEY))) {
+      authorizationProviders = configs.get(PulsarConfig.PULSAR_AUTHORIZATION_PROVIDER_KEY);
     }
 
     if (StringUtils.isNotEmpty(configs.get(ZOOKEEPER_PORT_KEY))) {
@@ -158,6 +166,12 @@ public class PulsarBootstrap implements Bootstrap {
     }
     if (StringUtils.isNotEmpty(configs.get(ZOOKEEPER_HOST_CLIENT_KEY))) {
       zookeeperHost = configs.get(ZOOKEEPER_HOST_CLIENT_KEY);
+    }
+
+    if (StringUtils.isNotEmpty(configs.get(PULSAR_EXTRA_CONF_KEY))) {
+      String extraConfList = configs.get(PULSAR_EXTRA_CONF_KEY);
+      String[] extraConfsString = extraConfList.split(",");
+      extraConf = Arrays.asList(extraConfsString).stream().collect(Collectors.toMap(c -> c.split("=")[0], c -> c.split("=")[1]));
     }
   }
 
@@ -177,10 +191,22 @@ public class PulsarBootstrap implements Bootstrap {
     serviceConfiguration.setManagedLedgerDefaultWriteQuorum(1);
     serviceConfiguration.setManagedLedgerDefaultAckQuorum(1);
     serviceConfiguration.setAllowAutoTopicCreation(true);
-    serviceConfiguration.setAuthenticationEnabled(true);
-    serviceConfiguration.setAuthenticationProviders(Collections.singleton(authenticationProviders));
-    serviceConfiguration.setAuthorizationEnabled(true);
-    serviceConfiguration.setAuthorizationProvider(authorizationProviders);
+    if (authenticationEnabled) {
+        serviceConfiguration.setAuthenticationEnabled(authenticationEnabled);
+      serviceConfiguration.setAuthenticationProviders(Collections.singleton(authenticationProviders));
+    }
+    if (authorizationEnabled) {
+      serviceConfiguration.setAuthorizationEnabled(authorizationEnabled);
+      serviceConfiguration.setAuthorizationProvider(authorizationProviders);
+    }
+
+    if (!extraConf.isEmpty()) {
+      Properties properties = new Properties();
+      extraConf.entrySet().forEach(e -> {
+        properties.setProperty(e.getKey(), e.getValue());
+      });
+      serviceConfiguration.setProperties(properties);
+    }
 
     workerConfig = new WorkerConfig();
 
@@ -227,6 +253,8 @@ public class PulsarBootstrap implements Bootstrap {
       try {
         build();
         pulsarService.start();
+        final URI dlUri = functionsWorkerService.getDlogUri();
+//        functionsWorkerService.start(dlUri, new AuthenticationService(PulsarConfigurationLoader.convertFrom(workerConfig)), null);
         setupCluster();
       } catch (Exception e) {
         LOGGER.error("unable to add pulsar", e);

@@ -166,6 +166,13 @@
               <groupId>com.clevercloud</groupId>
               <version>1.0-SNAPSHOT</version>
               <mainClass>com.clevercloud.hadoopunit.pulsar.PulsarBootstrap</mainClass>
+              <properties>
+                <pulsar.authentication.enabled>true</pulsar.authentication.enabled>
+                <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.BiscuitAuthenticationPlugin</pulsar.authentication.provider>
+                <pulsar.authorization.enabled>true</pulsar.authorization.enabled>
+                <pulsar.authorisztion.provider>com.clevercloud.biscuitpulsar.BiscuitAuthorizationPlugin</pulsar.authorisztion.provider>
+                <pulsar.extra.conf>biscuitRootKey=da905388864659eb785877a319fbc42c48e2f8a40af0c5baea0ef8ff7c795253</pulsar.extra.conf>
+              </properties>
             </componentArtifact>
           </components>
         </configuration>
