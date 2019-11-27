@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PulsarStandaloneBootstrapIntegrationTest {
-  private static final Logger LOGGER = LoggerFactory.getLogger(PulsarStandaloneBootstrapIntegrationTest.class);
+public class BiscuitPulsarIntegrationTest {
+  private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitPulsarIntegrationTest.class);
   private static final String TOPIC = "hello";
   private static final int NUM_OF_MESSAGES = 100;
   static private Configuration configuration;
