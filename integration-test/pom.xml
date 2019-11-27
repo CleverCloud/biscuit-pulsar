@@ -15,13 +15,6 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
 
-    <biscuit-java.version>0.1.0</biscuit-java.version>
-    <pulsar-broker.version>2.4.1</pulsar-broker.version>
-    <grpc.version>1.18.0</grpc.version>
-    <vavr.version>0.10.2</vavr.version>
-
-    <logback-classic.version>1.2.3</logback-classic.version>
-
     <hadoop-unit.version>3.7</hadoop-unit.version>
   </properties>
 
@@ -29,7 +22,6 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>${logback-classic.version}</version>
     </dependency>
     <dependency>
       <groupId>io.vavr</groupId>
@@ -49,14 +41,12 @@
     <dependency>
       <groupId>com.clevercloud</groupId>
       <artifactId>biscuit-java</artifactId>
-      <version>${biscuit-java.version}</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/junit/junit -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.12</version>
       <scope>test</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
@@ -66,33 +56,27 @@
       <version>3.14.0</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>fr.jetoile.hadoop</groupId>
       <artifactId>hadoop-unit-commons</artifactId>
       <version>${hadoop-unit.version}</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.apache.pulsar</groupId>
       <artifactId>pulsar-broker</artifactId>
-      <version>${pulsar-broker.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.pulsar</groupId>
       <artifactId>pulsar-client</artifactId>
-      <version>${pulsar-broker.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.10.1</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <build>

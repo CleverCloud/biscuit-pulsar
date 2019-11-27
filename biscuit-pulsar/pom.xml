@@ -11,12 +11,11 @@
   <artifactId>biscuit-pulsar</artifactId>
 
   <properties>
-    <biscuit-java.version>0.1.0</biscuit-java.version>
-    <pulsar-broker.version>2.4.1</pulsar-broker.version>
-    <grpc.version>1.18.0</grpc.version>
-    <vavr.version>0.10.2</vavr.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
 
-    <logback-classic.version>1.2.3</logback-classic.version>
+    <biscuit-java.version>0.1.0</biscuit-java.version>
   </properties>
 
   <dependencies>
@@ -39,7 +38,14 @@
     <dependency>
       <groupId>com.clevercloud</groupId>
       <artifactId>biscuit-java</artifactId>
+      <version>${biscuit-java.version}</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/junit/junit -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
-
 </project>
