@@ -15,6 +15,7 @@
   </modules>
 
   <properties>
+    <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -25,27 +26,55 @@
     <grpc.version>1.18.0</grpc.version>
     <vavr.version>0.10.2</vavr.version>
 
+    <hadoop-unit.version>3.7</hadoop-unit.version>
+
     <assertj-core.version>3.14.0</assertj-core.version>
     <junit.version>4.12</junit.version>
     <jackson-annotations.version>2.10.1</jackson-annotations.version>
+    <slf4j-api.version>1.7.29</slf4j-api.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>${logback-classic.version}</version>
+        <groupId>biscuit-pulsar-parent</groupId>
+        <artifactId>biscuit-pulsar</artifactId>
+        <version>${project.version}</version>
       </dependency>
+
+      <dependency>
+        <groupId>com.clevercloud</groupId>
+        <artifactId>biscuit-java</artifactId>
+        <version>${biscuit-java.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>io.vavr</groupId>
         <artifactId>vavr</artifactId>
         <version>${vavr.version}</version>
       </dependency>
+
       <dependency>
         <groupId>org.apache.pulsar</groupId>
         <artifactId>pulsar-broker-common</artifactId>
         <version>${pulsar-broker.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pulsar</groupId>
+        <artifactId>pulsar-broker</artifactId>
+        <version>${pulsar-broker.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>io.grpc</groupId>
@@ -53,24 +82,33 @@
         <version>${grpc.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.clevercloud</groupId>
-        <artifactId>biscuit-java</artifactId>
-        <version>${biscuit-java.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.pulsar</groupId>
-        <artifactId>pulsar-broker</artifactId>
-        <version>${pulsar-broker.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.pulsar</groupId>
         <artifactId>pulsar-client</artifactId>
         <version>${pulsar-broker.version}</version>
       </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback-classic.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson-annotations.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>fr.jetoile.hadoop</groupId>
+        <artifactId>hadoop-unit-commons</artifactId>
+        <version>${hadoop-unit.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
@@ -86,4 +124,44 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-all</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

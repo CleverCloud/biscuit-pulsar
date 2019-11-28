@@ -6,7 +6,6 @@ import com.clevercloud.biscuit.token.Verifier;
 import com.clevercloud.biscuit.token.builder.Fact;
 import com.clevercloud.biscuit.token.builder.Predicate;
 import io.vavr.control.Either;
-import io.vavr.control.Option;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authorization.AuthorizationProvider;
@@ -28,7 +27,7 @@ import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 
 public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
-  private static final Logger log = LoggerFactory.getLogger(BiscuitAuthorizationPlugin.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitAuthorizationPlugin.class);
 
   public ServiceConfiguration conf;
   public ConfigurationCacheService configCache;
@@ -61,7 +60,7 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
   }
 
   public Either<Error, Verifier> verifierFromBiscuit(String role) {
-    log.info("verifierFromBiscuit: got role: {}", role);
+    LOGGER.info("verifierFromBiscuit: got role: {}", role);
     Either<Error, Biscuit> deser = Biscuit.from_sealed(Base64.getDecoder().decode(role.substring("biscuit:".length())),
         BiscuitAuthenticationPlugin.BISCUIT_SEALING_KEY.getBytes());
     if(deser.isLeft()) {
@@ -70,7 +69,7 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
     }
 
     Biscuit token = deser.get();
-    log.info("will authorize with token:\n{}", token.print());
+    LOGGER.info("will authorize with token:\n{}", token.print());
 
     Either<Error, Verifier> res = token.verify_sealed();
     if(res.isLeft()) {
@@ -138,15 +137,15 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
     }
 
     CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
-    log.info("got role : {}", role);
+    LOGGER.info("got role : {}", role);
 
     Either<Error, Verifier> res = verifierFromBiscuit(role);
     if(res.isLeft()) {
-      log.error("could not create verifier");
+      LOGGER.error("could not create verifier");
       permissionFuture.complete(false);
     }
 
-    log.info("created verifier");
+    LOGGER.info("created verifier");
     Verifier verifier = res.get();
 
     verifier.add_fact(topic(topicName));
@@ -160,9 +159,9 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
 
     Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
-      log.error("produce verifier failure: {}", verifierResult.getLeft());
+      LOGGER.error("produce verifier failure: {}", verifierResult.getLeft());
     } else {
-      log.info("produce request authorized by biscuit token");
+      LOGGER.info("produce request authorized by biscuit token");
     }
 
     permissionFuture.complete(verifierResult.isRight());
@@ -207,9 +206,9 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
 
     Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
-      log.error("consume verifier failure: {}", verifierResult.getLeft());
+      LOGGER.error("consume verifier failure: {}", verifierResult.getLeft());
     } else {
-      log.info("consume request authorized by biscuit token");
+      LOGGER.info("consume request authorized by biscuit token");
     }
 
     permissionFuture.complete(verifierResult.isRight());
@@ -248,9 +247,9 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
 
     Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
-      log.error("lookup verifier failure: {}", verifierResult.getLeft());
+      LOGGER.error("lookup verifier failure: {}", verifierResult.getLeft());
     } else {
-      log.info("lookup authorized by biscuit token");
+      LOGGER.info("lookup authorized by biscuit token");
     }
     permissionFuture.complete(verifierResult.isRight());
 
@@ -294,7 +293,7 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
       return defaultProvider.isSuperUser(role, serviceConfiguration);
     }
 
-    log.info("BISCUIT: isSuperUser? got role: {}", role);
+    LOGGER.info("BISCUIT: isSuperUser? got role: {}", role);
     CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
 
     Either<Error, Verifier> res = verifierFromBiscuit(role);
@@ -311,9 +310,9 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
 
     Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
-      log.error("verifier failure: {}", verifierResult.getLeft());
+      LOGGER.error("verifier failure: {}", verifierResult.getLeft());
     } else {
-      log.info("superuser authorized by biscuit token");
+      LOGGER.info("superuser authorized by biscuit token");
     }
 
     permissionFuture.complete(verifierResult.isRight());
