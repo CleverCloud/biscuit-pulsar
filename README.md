@@ -3,11 +3,7 @@
 ## Tests
 
 ```bash
-# run classical tests
-mvn test
-
-# run hadoop-unit tests
-mvn test -Dtest=PulsarStandaloneBootstrapIntegrationTest
+mvn install
 ```
 
 ## Configuration
