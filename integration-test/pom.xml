@@ -17,7 +17,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>biscuit-pulsar-parent</groupId>
+      <groupId>com.clevercloud</groupId>
       <artifactId>biscuit-pulsar</artifactId>
       <scope>test</scope>
     </dependency>
