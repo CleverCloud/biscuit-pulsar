@@ -17,6 +17,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>biscuit-pulsar-parent</groupId>
+      <artifactId>biscuit-pulsar</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>io.vavr</groupId>
       <artifactId>vavr</artifactId>
       <scope>test</scope>
@@ -116,7 +121,7 @@
                 <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.BiscuitAuthenticationPlugin</pulsar.authentication.provider>
                 <pulsar.authorization.enabled>true</pulsar.authorization.enabled>
                 <pulsar.authorization.provider>com.clevercloud.biscuitpulsar.BiscuitAuthorizationPlugin</pulsar.authorization.provider>
-                <pulsar.extra.conf>biscuitRootKey=da905388864659eb785877a319fbc42c48e2f8a40af0c5baea0ef8ff7c795253</pulsar.extra.conf>
+                <pulsar.extra.conf>biscuitRootKey=3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907</pulsar.extra.conf>
                 <pulsar.worker.enabled>false</pulsar.worker.enabled>
               </properties>
             </componentArtifact>
