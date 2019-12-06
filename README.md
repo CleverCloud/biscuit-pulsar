@@ -21,7 +21,7 @@ copy jars (from `build/libs`) to pulsar's `/lib` directory:
 - biscuit-java
 - curve25519-elisabeth
 
-```
+```bash
 # Enable authentication
 authenticationEnabled=true
 
