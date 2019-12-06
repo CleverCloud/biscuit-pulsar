@@ -49,8 +49,8 @@ public class BiscuitPulsarIntegrationTest {
     SecureRandom rng = new SecureRandom(seed);
     KeyPair root = new KeyPair(rng);
 
-    System.out.println("ROOT PUBLICKEY");
-    System.out.println(hex(root.public_key().key.compress().toByteArray()));
+    LOGGER.info("ROOT PUBLICKEY");
+    LOGGER.info(hex(root.public_key().key.compress().toByteArray()));
 
     SymbolTable symbols = Biscuit.default_symbol_table();
 
@@ -59,19 +59,12 @@ public class BiscuitPulsarIntegrationTest {
 
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
 
-    System.out.println(b.print());
-    System.out.println("serializing the first token");
-
     byte[] data = b.serialize().get();
-
-    System.out.print("Serialized biscuit length: ");
-    System.out.println(data.length);
-    System.out.println("Serialized biscui");
-    System.out.println(hex(data));
 
     final PulsarClient client = PulsarClient.builder()
       .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
-      .authentication("com.clevercloud.biscuitpulsar.BiscuitAuthenticationPlugin", "biscuit:" + hex(data))
+      //.authentication(new AuthenticationBiscuit(Base64.getUrlEncoder().encode(data).toString()))
+      .authentication("com.clevercloud.biscuitpulsar.AuthenticationBiscuit", "biscuit:" + Base64.getUrlEncoder().encode(data).toString())
       .build();
 
     final Producer<String> producer = client.newProducer(Schema.STRING)

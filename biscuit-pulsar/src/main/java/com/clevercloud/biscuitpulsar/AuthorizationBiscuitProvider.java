@@ -26,17 +26,17 @@ import static com.clevercloud.biscuit.token.builder.Utils.s;
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 
-public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
-  private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitAuthorizationPlugin.class);
+public class AuthorizationBiscuitProvider implements AuthorizationProvider {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationBiscuitProvider.class);
 
   public ServiceConfiguration conf;
   public ConfigurationCacheService configCache;
   private PulsarAuthorizationProvider defaultProvider;
 
-  public BiscuitAuthorizationPlugin() {
+  public AuthorizationBiscuitProvider() {
   }
 
-  public BiscuitAuthorizationPlugin(ServiceConfiguration conf, ConfigurationCacheService configCache)
+  public AuthorizationBiscuitProvider(ServiceConfiguration conf, ConfigurationCacheService configCache)
       throws IOException {
     initialize(conf, configCache);
   }
@@ -62,7 +62,7 @@ public class BiscuitAuthorizationPlugin implements AuthorizationProvider {
   public Either<Error, Verifier> verifierFromBiscuit(String role) {
     LOGGER.info("verifierFromBiscuit: got role: {}", role);
     Either<Error, Biscuit> deser = Biscuit.from_sealed(Base64.getDecoder().decode(role.substring("biscuit:".length())),
-        BiscuitAuthenticationPlugin.BISCUIT_SEALING_KEY.getBytes());
+        AuthenticationBiscuitProvider.BISCUIT_SEALING_KEY.getBytes());
     if(deser.isLeft()) {
       Error e = deser.getLeft();
       return Left(e);

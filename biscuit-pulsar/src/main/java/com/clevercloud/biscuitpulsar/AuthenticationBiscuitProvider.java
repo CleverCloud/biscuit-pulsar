@@ -21,8 +21,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BiscuitAuthenticationPlugin implements AuthenticationProvider {
-  private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitAuthenticationPlugin.class);
+public class AuthenticationBiscuitProvider implements AuthenticationProvider {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationBiscuitProvider.class);
   public static final String BISCUIT_SEALING_KEY = "biscuit-pulsar-key";
   private PublicKey rootKey;
 
@@ -73,14 +73,24 @@ public class BiscuitAuthenticationPlugin implements AuthenticationProvider {
       decodedBytes = Arrays.asList(authenticationDataSource.getCommandData().split(":"));
     }
 
+    System.out.println(decodedBytes.toString());
+    System.out.println(decodedBytes.get(0).toString());
+    System.out.println(decodedBytes.get(1).toString());
     if(!decodedBytes.get(0).equals("biscuit")) {
       LOGGER.error("invalid token prefix(must be 'biscuit'): {}", decodedBytes.get(0));
       throw new AuthenticationException("invalid token prefix(must be 'biscuit')");
     }
 
+    System.out.println("GO NEXT");
+
     LOGGER.info("Authentication Authorization|| {}", decodedBytes);
 
+    System.out.println(Base64.getUrlDecoder().decode(decodedBytes.get(1)));
+
     Either<Error, Biscuit> deser = Biscuit.from_bytes(Base64.getUrlDecoder().decode(decodedBytes.get(1)));
+
+    System.out.println("DESEERRRRRRRRR");
+    System.out.println(deser.toString());
 
     if(deser.isLeft()) {
         throw new AuthenticationException("could not deserialize token");
