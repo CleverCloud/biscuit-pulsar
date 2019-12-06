@@ -30,7 +30,7 @@ import com.clevercloud.biscuit.token.builder.Block;
 
 public class BiscuitPulsarIntegrationTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitPulsarIntegrationTest.class);
-  private static final String TOPIC = "hello";
+  private static final String TOPIC_TEST = "public/default/test";
   private static final int NUM_OF_MESSAGES = 100;
   static private Configuration configuration;
 
@@ -44,20 +44,18 @@ public class BiscuitPulsarIntegrationTest {
   }
 
   @Test
-  public void biscuit() {
+  public void biscuit() throws PulsarClientException {
     byte[] seed = {0, 0, 0, 0};
     SecureRandom rng = new SecureRandom(seed);
-
-    System.out.println("preparing the authority block");
-
     KeyPair root = new KeyPair(rng);
 
-    SymbolTable symbols = Biscuit.default_symbol_table();
-    Block authority_builder = new Block(0, symbols);
+    System.out.println("ROOT PUBLICKEY");
+    System.out.println(hex(root.public_key().key.compress().toByteArray()));
 
-    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("file1"), s("read"))));
-    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("file2"), s("read"))));
-    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("file1"), s("write"))));
+    SymbolTable symbols = Biscuit.default_symbol_table();
+
+    Block authority_builder = new Block(0, symbols);
+    authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("test"), s("produce"))));
 
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
 
@@ -66,17 +64,44 @@ public class BiscuitPulsarIntegrationTest {
 
     byte[] data = b.serialize().get();
 
-    System.out.print("data len: ");
+    System.out.print("Serialized biscuit length: ");
     System.out.println(data.length);
+    System.out.println("Serialized biscui");
     System.out.println(hex(data));
 
-    System.out.println("deserializing the first token");
-    Biscuit deser = Biscuit.from_bytes(data).get();
+    final PulsarClient client = PulsarClient.builder()
+      .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
+      .authentication("com.clevercloud.biscuitpulsar.BiscuitAuthenticationPlugin", "biscuit:" + hex(data))
+      .build();
 
-    System.out.println(deser.print());
+    final Producer<String> producer = client.newProducer(Schema.STRING)
+      .topic(TOPIC_TEST)
+      .enableBatching(false)
+      .create();
+
+    final Consumer<String> consumer = client.newConsumer(Schema.STRING)
+      .topic(TOPIC_TEST)
+      .subscriptionName("test-subs-1")
+      .ackTimeout(10, TimeUnit.SECONDS)
+      .subscriptionType(SubscriptionType.Exclusive)
+      .subscribe();
+
+    for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
+      producer.send("Hello_" + i);
+    }
+    producer.close();
+
+    for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
+      final Message<String> message = consumer.receive(1, TimeUnit.SECONDS);
+      LOGGER.info("Message received : {}", message.getValue());
+      assertThat(message.getValue()).isEqualTo("Hello_" + i);
+    }
+
+    consumer.close();
+    client.close();
   }
 
-  @Test
+  /*@Test
   public void pulsarShouldStart() throws PulsarClientException {
     final PulsarClient client = PulsarClient.builder()
       .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
@@ -107,5 +132,5 @@ public class BiscuitPulsarIntegrationTest {
 
     consumer.close();
     client.close();
-  }
+  }*/
 }
