@@ -12,6 +12,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
+import com.clevercloud.biscuit.crypto.KeyPair;
+import com.clevercloud.biscuit.datalog.*;
+import com.clevercloud.biscuit.error.FailedCaveat;
+import com.clevercloud.biscuit.error.LogicError;
+import com.clevercloud.biscuit.error.Error;
+import com.clevercloud.biscuit.token.*;
+import io.vavr.control.Either;
+
+import java.security.SecureRandom;
+import java.util.*;
+
+import static com.clevercloud.biscuit.crypto.TokenSignature.hex;
+import static com.clevercloud.biscuit.token.builder.Utils.*;
+
+import com.clevercloud.biscuit.token.builder.Block;
 
 public class BiscuitPulsarIntegrationTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitPulsarIntegrationTest.class);
@@ -26,6 +41,39 @@ public class BiscuitPulsarIntegrationTest {
   @BeforeClass
   public static void setup() throws ConfigurationException {
     configuration = new PropertiesConfiguration(HadoopUnitConfig.DEFAULT_PROPS_FILE);
+  }
+
+  @Test
+  public void biscuit() {
+    byte[] seed = {0, 0, 0, 0};
+    SecureRandom rng = new SecureRandom(seed);
+
+    System.out.println("preparing the authority block");
+
+    KeyPair root = new KeyPair(rng);
+
+    SymbolTable symbols = Biscuit.default_symbol_table();
+    Block authority_builder = new Block(0, symbols);
+
+    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("file1"), s("read"))));
+    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("file2"), s("read"))));
+    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("file1"), s("write"))));
+
+    Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
+
+    System.out.println(b.print());
+    System.out.println("serializing the first token");
+
+    byte[] data = b.serialize().get();
+
+    System.out.print("data len: ");
+    System.out.println(data.length);
+    System.out.println(hex(data));
+
+    System.out.println("deserializing the first token");
+    Biscuit deser = Biscuit.from_bytes(data).get();
+
+    System.out.println(deser.print());
   }
 
   @Test
