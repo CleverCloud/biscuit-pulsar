@@ -55,6 +55,12 @@
 
       <dependency>
         <groupId>com.clevercloud</groupId>
+        <artifactId>biscuit-pulsar</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.clevercloud</groupId>
         <artifactId>biscuit-java</artifactId>
         <version>${biscuit-java.version}</version>
       </dependency>
