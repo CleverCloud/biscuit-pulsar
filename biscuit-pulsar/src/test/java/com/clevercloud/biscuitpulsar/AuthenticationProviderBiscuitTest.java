@@ -3,11 +3,10 @@ package com.clevercloud.biscuitpulsar;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class AuthenticationBiscuitProviderTest {
+public class AuthenticationProviderBiscuitTest {
   @Test
   public void testGetAuthMethodName() {
-    AuthenticationBiscuitProvider authenticationPlugin = new AuthenticationBiscuitProvider();
-    System.out.println(authenticationPlugin.getAuthMethodName());
+    AuthenticationProviderBiscuit authenticationPlugin = new AuthenticationProviderBiscuit();
     assertEquals("biscuit", authenticationPlugin.getAuthMethodName());
   }
 }
