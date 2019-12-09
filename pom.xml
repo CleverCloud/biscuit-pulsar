@@ -52,7 +52,12 @@
         <artifactId>biscuit-java</artifactId>
         <version>${biscuit-java.version}</version>
       </dependency>
-
+      <dependency>
+        <groupId>com.clevercloud</groupId>
+        <artifactId>biscuit-pulsar</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>io.vavr</groupId>
         <artifactId>vavr</artifactId>
