@@ -26,17 +26,17 @@ import static com.clevercloud.biscuit.token.builder.Utils.s;
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 
-public class AuthorizationBiscuitProvider implements AuthorizationProvider {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationBiscuitProvider.class);
+public class AuthorizationProviderBiscuit implements AuthorizationProvider {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationProviderBiscuit.class);
 
   public ServiceConfiguration conf;
   public ConfigurationCacheService configCache;
   private PulsarAuthorizationProvider defaultProvider;
 
-  public AuthorizationBiscuitProvider() {
+  public AuthorizationProviderBiscuit() {
   }
 
-  public AuthorizationBiscuitProvider(ServiceConfiguration conf, ConfigurationCacheService configCache)
+  public AuthorizationProviderBiscuit(ServiceConfiguration conf, ConfigurationCacheService configCache)
       throws IOException {
     initialize(conf, configCache);
   }
@@ -61,8 +61,10 @@ public class AuthorizationBiscuitProvider implements AuthorizationProvider {
 
   public Either<Error, Verifier> verifierFromBiscuit(String role) {
     LOGGER.info("verifierFromBiscuit: got role: {}", role);
-    Either<Error, Biscuit> deser = Biscuit.from_sealed(Base64.getDecoder().decode(role.substring("biscuit:".length())),
-        AuthenticationBiscuitProvider.BISCUIT_SEALING_KEY.getBytes());
+    Either<Error, Biscuit> deser = Biscuit.from_sealed(
+      Base64.getDecoder().decode(role.substring("biscuit:".length())),
+      AuthenticationProviderBiscuit.BISCUIT_SEALING_KEY.getBytes()
+    );
     if(deser.isLeft()) {
       Error e = deser.getLeft();
       return Left(e);
@@ -153,9 +155,9 @@ public class AuthorizationBiscuitProvider implements AuthorizationProvider {
     verifier.set_time();
 
     verifier.add_authority_caveat(rule("checked_produce_right", Arrays.asList(string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
-        Arrays.asList(
-            topicRight(topicName, "produce")
-        )));
+      Arrays.asList(
+        topicRight(topicName, "produce")
+      )));
 
     Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
@@ -276,9 +278,9 @@ public class AuthorizationBiscuitProvider implements AuthorizationProvider {
     verifier.set_time();
 
     verifier.add_authority_caveat(rule("checked_allowfunction_right", Arrays.asList(string(namespaceName.getTenant()), string(namespaceName.getLocalName())),
-        Arrays.asList(
-            pred("right", Arrays.asList(s("authority"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("functions")))
-        )));
+      Arrays.asList(
+        pred("right", Arrays.asList(s("authority"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("functions")))
+      )));
 
     Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
     permissionFuture.complete(verifierResult.isRight());
@@ -304,9 +306,9 @@ public class AuthorizationBiscuitProvider implements AuthorizationProvider {
     Verifier verifier = res.get();
 
     verifier.add_authority_caveat(rule("checked_issuperuser_right", Arrays.asList(s("admin")),
-        Arrays.asList(
-            pred("right", Arrays.asList(s("authority"), s("admin")))
-        )));
+      Arrays.asList(
+        pred("right", Arrays.asList(s("authority"), s("admin")))
+      )));
 
     Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
@@ -343,6 +345,6 @@ public class AuthorizationBiscuitProvider implements AuthorizationProvider {
 
   @Override
   public void close() throws IOException {
-
+    // noop
   }
 }

@@ -55,75 +55,46 @@ public class BiscuitPulsarIntegrationTest {
     SymbolTable symbols = Biscuit.default_symbol_table();
 
     Block authority_builder = new Block(0, symbols);
-    authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("test"), s("produce"))));
+    authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
 
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
 
     byte[] data = b.serialize().get();
 
+    AuthenticationBiscuit authenticationBiscuit = new AuthenticationBiscuit();
+    authenticationBiscuit.configure(Base64.getUrlEncoder().encodeToString(data));
+
     final PulsarClient client = PulsarClient.builder()
       .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
-      //.authentication(new AuthenticationBiscuit(Base64.getUrlEncoder().encode(data).toString()))
-      .authentication("com.clevercloud.biscuitpulsar.AuthenticationBiscuit", "biscuit:" + Base64.getUrlEncoder().encode(data).toString())
+      //.authentication(authenticationBiscuit)
+      .authentication("com.clevercloud.biscuitpulsar.AuthenticationBiscuit", Base64.getUrlEncoder().encodeToString(data))
       .build();
 
+    System.out.println("CONNNECT OMG");
     final Producer<String> producer = client.newProducer(Schema.STRING)
       .topic(TOPIC_TEST)
       .enableBatching(false)
       .create();
 
-    final Consumer<String> consumer = client.newConsumer(Schema.STRING)
+    /*final Consumer<String> consumer = client.newConsumer(Schema.STRING)
       .topic(TOPIC_TEST)
       .subscriptionName("test-subs-1")
       .ackTimeout(10, TimeUnit.SECONDS)
       .subscriptionType(SubscriptionType.Exclusive)
-      .subscribe();
+      .subscribe();*/
 
     for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
       producer.send("Hello_" + i);
     }
     producer.close();
-
+/*
     for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
       final Message<String> message = consumer.receive(1, TimeUnit.SECONDS);
       LOGGER.info("Message received : {}", message.getValue());
       assertThat(message.getValue()).isEqualTo("Hello_" + i);
     }
 
-    consumer.close();
+    consumer.close();*/
     client.close();
   }
-
-  /*@Test
-  public void pulsarShouldStart() throws PulsarClientException {
-    final PulsarClient client = PulsarClient.builder()
-      .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
-      .build();
-
-    final Producer<String> producer = client.newProducer(Schema.STRING)
-      .topic(TOPIC)
-      .enableBatching(false)
-      .create();
-
-    final Consumer<String> consumer = client.newConsumer(Schema.STRING)
-      .topic(TOPIC)
-      .subscriptionName("test-subs-1")
-      .ackTimeout(10, TimeUnit.SECONDS)
-      .subscriptionType(SubscriptionType.Exclusive)
-      .subscribe();
-
-    for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
-      producer.send("Hello_" + i);
-    }
-    producer.close();
-
-    for (int i = 1; i <= NUM_OF_MESSAGES; ++i) {
-      final Message<String> message = consumer.receive(1, TimeUnit.SECONDS);
-      LOGGER.info("Message received : {}", message.getValue());
-      assertThat(message.getValue()).isEqualTo("Hello_" + i);
-    }
-
-    consumer.close();
-    client.close();
-  }*/
 }

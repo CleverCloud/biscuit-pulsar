@@ -14,7 +14,6 @@
     <dependency>
       <groupId>com.clevercloud</groupId>
       <artifactId>biscuit-java</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.clevercloud</groupId>
@@ -118,9 +117,9 @@
               <properties>
                 <pulsar.extraClasspath>com.clevercloud:biscuit-pulsar:1.0-SNAPSHOT</pulsar.extraClasspath>
                 <pulsar.authentication.enabled>true</pulsar.authentication.enabled>
-                <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.AuthenticationBiscuitProvider</pulsar.authentication.provider>
+                <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.AuthenticationProviderBiscuit</pulsar.authentication.provider>
                 <pulsar.authorization.enabled>true</pulsar.authorization.enabled>
-                <pulsar.authorization.provider>com.clevercloud.biscuitpulsar.AuthenticationBiscuitProvider</pulsar.authorization.provider>
+                <pulsar.authorization.provider>com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit</pulsar.authorization.provider>
                 <pulsar.extra.conf>biscuitRootKey=3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907</pulsar.extra.conf>
                 <pulsar.worker.enabled>false</pulsar.worker.enabled>
               </properties>
