@@ -3,7 +3,11 @@
 ## Tests
 
 ```bash
+# run all tests
 mvn install
+
+# run AuthorizationProviderBiscuitTest in module biscuit-pulsar
+mvn install -Dtest=AuthorizationProviderBiscuitTest -pl biscuit-pulsar
 ```
 
 ## Configuration
