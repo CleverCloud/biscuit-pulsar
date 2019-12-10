@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.broker.ServiceConfiguration;
@@ -37,7 +38,7 @@ public class AuthorizationProviderBiscuitTest {
     SymbolTable symbols = Biscuit.default_symbol_table();
 
     Block authority_builder = new Block(0, symbols);
-    authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("lookup"))));
+    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("topic"), string("public"), string("default"), string("test"), s("produce"))));
 
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
 
@@ -71,7 +72,7 @@ public class AuthorizationProviderBiscuitTest {
     provider.close();
 
     AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-    authorizationProvider.canLookupAsync(TopicName.get("public/default/test"), subject, new AuthenticationDataSource() {
+    AuthenticationDataSource authData = new AuthenticationDataSource() {
       @Override
       public boolean hasDataFromCommand() {
         return true;
@@ -81,9 +82,11 @@ public class AuthorizationProviderBiscuitTest {
       public String getCommandData() {
         return biscuit;
       }
-    }).thenApply(authorized -> {
-      LOGGER.info("AUTHORIZED: {}", authorized);
-      return authorized;
-   });
+    };
+    CompletableFuture<Boolean> lookupAuthorizedFuture = authorizationProvider.canLookupAsync(TopicName.get("public/default/test"), subject, authData);
+    assertTrue(lookupAuthorizedFuture.get());
+
+    CompletableFuture<Boolean> produceAuthorizedFuture = authorizationProvider.canProduceAsync(TopicName.get("public/default/test"), subject, authData);
+    assertTrue(produceAuthorizedFuture.get());
   }
 }

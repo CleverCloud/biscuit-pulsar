@@ -55,22 +55,18 @@ public class BiscuitPulsarIntegrationTest {
     SymbolTable symbols = Biscuit.default_symbol_table();
 
     Block authority_builder = new Block(0, symbols);
-    authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
+    authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("topic"), string("public"), string("default"), string("test"), s("produce"))));
 
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
 
     byte[] data = b.serialize().get();
-
-    AuthenticationBiscuit authenticationBiscuit = new AuthenticationBiscuit();
-    authenticationBiscuit.configure(Base64.getUrlEncoder().encodeToString(data));
+    String biscuit = Base64.getUrlEncoder().encodeToString(data);
 
     final PulsarClient client = PulsarClient.builder()
       .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
-      //.authentication(authenticationBiscuit)
-      .authentication("com.clevercloud.biscuitpulsar.AuthenticationBiscuit", Base64.getUrlEncoder().encodeToString(data))
+      .authentication(AuthenticationBiscuit.class.getName(), biscuit)
       .build();
 
-    System.out.println("CONNNECT OMG");
     final Producer<String> producer = client.newProducer(Schema.STRING)
       .topic(TOPIC_TEST)
       .enableBatching(false)
