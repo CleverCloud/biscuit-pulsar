@@ -24,7 +24,7 @@
       <artifactId>pulsar-broker-common</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.clevercloud</groupId>
+      <groupId>com.clever-cloud</groupId>
       <artifactId>biscuit-java</artifactId>
     </dependency>
   </dependencies>

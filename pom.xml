@@ -21,7 +21,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
 
     <logback-classic.version>1.2.3</logback-classic.version>
-    <biscuit-java.version>0.1.0</biscuit-java.version>
+    <biscuit-java.version>0.2.0</biscuit-java.version>
     <pulsar-broker.version>2.4.1</pulsar-broker.version>
     <grpc.version>1.18.0</grpc.version>
     <vavr.version>0.10.2</vavr.version>
@@ -48,7 +48,7 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>com.clevercloud</groupId>
+        <groupId>com.clever-cloud</groupId>
         <artifactId>biscuit-java</artifactId>
         <version>${biscuit-java.version}</version>
       </dependency>
