@@ -120,7 +120,7 @@
                 <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.AuthenticationProviderBiscuit</pulsar.authentication.provider>
                 <pulsar.authorization.enabled>true</pulsar.authorization.enabled>
                 <pulsar.authorization.provider>com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit</pulsar.authorization.provider>
-                <pulsar.extra.conf>biscuitPublicRootKey=D682748616610E31111065D910BCB6772CA62D31B042456EB0C33C88FB8FAB1D</pulsar.extra.conf>
+                <pulsar.extra.conf>biscuitPublicRootKey=D682748616610E31111065D910BCB6772CA62D31B042456EB0C33C88FB8FAB1D,superUserRoles=admin</pulsar.extra.conf>
                 <pulsar.worker.enabled>false</pulsar.worker.enabled>
               </properties>
             </componentArtifact>

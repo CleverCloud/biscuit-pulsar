@@ -54,6 +54,7 @@ public class BiscuitPulsarIntegrationTest {
 
     Block authority_builder = new Block(0, symbols);
     authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("topic"), string("public"), string("default"), string("test"), s("produce"))));
+    //authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
 
     byte[] seed = {0, 0, 0, 0};
     SecureRandom rng = new SecureRandom(seed);
