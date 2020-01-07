@@ -26,18 +26,18 @@ public class AuthenticationProviderBiscuitTest {
 
   @Test
   public void testAuthSecretKeyPair() throws Exception {
-    byte[] seed = {0, 0, 0, 0};
-    SecureRandom rng = new SecureRandom(seed);
-    KeyPair root = new KeyPair(rng);
+    KeyPair root = new KeyPair("3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907");
 
     LOGGER.info("ROOT PUBLICKEY");
-    LOGGER.info(hex(root.public_key().key.compress().toByteArray()));
+    LOGGER.info(root.toHex());
 
     SymbolTable symbols = Biscuit.default_symbol_table();
 
     Block authority_builder = new Block(0, symbols);
     authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
 
+    byte[] seed = {0, 0, 0, 0};
+    SecureRandom rng = new SecureRandom(seed);
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
 
     byte[] data = b.serialize().get();
