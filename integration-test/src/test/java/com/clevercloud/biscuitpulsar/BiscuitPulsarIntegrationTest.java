@@ -48,7 +48,7 @@ public class BiscuitPulsarIntegrationTest {
     KeyPair root = new KeyPair("3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907");
 
     LOGGER.info("ROOT PUBLICKEY");
-    LOGGER.info(root.toHex());
+    LOGGER.info(hex(root.public_key().key.compress().toByteArray()));
 
     SymbolTable symbols = Biscuit.default_symbol_table();
 
@@ -62,8 +62,12 @@ public class BiscuitPulsarIntegrationTest {
     byte[] data = b.serialize().get();
     String biscuit = Base64.getUrlEncoder().encodeToString(data);
 
+    LOGGER.info("BISCUIT");
+    LOGGER.info(biscuit);
+
     final PulsarClient client = PulsarClient.builder()
       .serviceUrl("pulsar://" + configuration.getString(PULSAR_IP_CLIENT_KEY) + ":" + configuration.getInt(PULSAR_PORT_KEY))
+      //.serviceUrl("pulsar://localhost:6650")
       .authentication(AuthenticationBiscuit.class.getName(), biscuit)
       .build();
 

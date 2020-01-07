@@ -32,7 +32,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
   public static final String BISCUIT_SEALING_KEY = "biscuit-pulsar-key";
 
-  final static String CONF_BISCUIT_ROOT_KEY = "biscuitRootKey";
+  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
 
   private PublicKey rootKey;
 
@@ -42,7 +42,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
   public void initialize(ServiceConfiguration serviceConfiguration) throws IOException {
     LOGGER.info("Initialize Apache Pulsar Biscuit authentication plugin");
-    String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_ROOT_KEY);
+    String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_PUBLIC_ROOT_KEY);
     LOGGER.info("Got biscuit root public key: {}", key);
     try {
       rootKey = new PublicKey(hexStringToByteArray(key));

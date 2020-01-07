@@ -4,10 +4,13 @@
 
 ```bash
 # run all tests
-mvn install
+mvn clean install
+
+# build without tests
+mvn clean install -Dmaven.test.skip=true
 
 # run AuthorizationProviderBiscuitTest in module biscuit-pulsar
-mvn install -Dtest=AuthorizationProviderBiscuitTest -pl biscuit-pulsar
+mvn clean install -Dtest=AuthorizationProviderBiscuitTest -pl biscuit-pulsar
 ```
 
 ## Configuration
@@ -35,7 +38,7 @@ authorizationEnabled=true
 authorizationProvider=com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit
 
 # Biscuit root signing key
-biscuitRootKey=da905388864659eb785877a319fbc42c48e2f8a40af0c5baea0ef8ff7c795253
+biscuitPublicRootKey=<BiscuitPublicRootKeyHexa>
 
 superUserRoles=admin
 ```

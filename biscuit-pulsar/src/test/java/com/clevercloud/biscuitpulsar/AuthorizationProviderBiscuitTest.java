@@ -30,8 +30,11 @@ public class AuthorizationProviderBiscuitTest {
   public void testAuthSecretKeyPair() throws Exception {
     KeyPair root = new KeyPair("3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907");
 
-    LOGGER.info("ROOT PUBLICKEY");
+    LOGGER.info("ROOT KEY");
     LOGGER.info(root.toHex());
+
+    LOGGER.info("ROOT PUBLICKEY");
+    LOGGER.info(hex(root.public_key().key.compress().toByteArray()));
 
     SymbolTable symbols = Biscuit.default_symbol_table();
 
@@ -47,7 +50,7 @@ public class AuthorizationProviderBiscuitTest {
     AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
 
     Properties properties = new Properties();
-    properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+    properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
 
     ServiceConfiguration conf = new ServiceConfiguration();
     conf.setProperties(properties);
