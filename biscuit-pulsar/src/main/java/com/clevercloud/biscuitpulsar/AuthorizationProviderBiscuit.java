@@ -238,16 +238,16 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     // add both operations because produce and consume rights imply lookup rights
     verifier.add_operation("produce");
     verifier.add_operation("consume");
-
     verifier.add_operation("lookup");
     verifier.set_time();
 
-    verifier.add_authority_caveat(rule("checked_lookup_right", Arrays.asList(string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
-        Arrays.asList(
-            topicRight(topicName, "lookup")
-        )));
+    verifier.add_caveat(caveat(rule(
+      "checked_lookup_right",
+      Arrays.asList(string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
+      Arrays.asList(topicRight(topicName, "lookup"))
+    )));
 
-    Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
+    Either<Error, Void> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("lookup verifier failure: {}", verifierResult.getLeft());
     } else {
@@ -277,12 +277,15 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     verifier.add_operation("functions");
     verifier.set_time();
 
-    verifier.add_authority_caveat(rule("checked_allowfunction_right", Arrays.asList(string(namespaceName.getTenant()), string(namespaceName.getLocalName())),
+    verifier.add_caveat(caveat(rule(
+      "checked_allowfunction_right",
+      Arrays.asList(string(namespaceName.getTenant()), string(namespaceName.getLocalName())),
       Arrays.asList(
         pred("right", Arrays.asList(s("authority"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("functions")))
-      )));
+      )
+    )));
 
-    Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
+    Either<Error, Void> verifierResult = verifier.verify();
     permissionFuture.complete(verifierResult.isRight());
 
     return permissionFuture;
