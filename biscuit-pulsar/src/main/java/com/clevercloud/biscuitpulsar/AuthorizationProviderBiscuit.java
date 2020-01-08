@@ -154,12 +154,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     verifier.add_operation("produce");
     verifier.set_time();
 
-    verifier.add_authority_caveat(rule("checked_produce_right", Arrays.asList(string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
-      Arrays.asList(
-        topicRight(topicName, "produce")
-      )));
+    verifier.add_caveat(caveat(rule(
+      "checked_produce_right",
+      Arrays.asList(string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
+      Arrays.asList(topicRight(topicName, "produce"))
+    )));
 
-    Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
+    Either<Error, Void> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("produce verifier failure: {}", verifierResult.getLeft());
     } else {
@@ -201,12 +202,15 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         Arrays.asList(
             topicRight(topicName, "consume"))));
 
-    verifier.add_authority_caveat(rule("checked_consume_right", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume")),
-        Arrays.asList(
-            pred("can_consume", Arrays.asList(s("authority"), s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())))
-        )));
+    verifier.add_caveat(caveat(rule(
+      "checked_consume_right",
+      Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume")),
+      Arrays.asList(
+        pred("can_consume", Arrays.asList(s("authority"), s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())))
+      )
+    )));
 
-    Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
+    Either<Error, Void> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("consume verifier failure: {}", verifierResult.getLeft());
     } else {
@@ -253,6 +257,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     } else {
       LOGGER.info("lookup authorized by biscuit token");
     }
+
     permissionFuture.complete(verifierResult.isRight());
 
     return permissionFuture;
@@ -308,12 +313,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
     Verifier verifier = res.get();
 
-    verifier.add_authority_caveat(rule("checked_issuperuser_right", Arrays.asList(s("admin")),
-      Arrays.asList(
-        pred("right", Arrays.asList(s("authority"), s("admin")))
-      )));
+    verifier.add_caveat(caveat(rule(
+      "checked_issuperuser_right",
+      Arrays.asList(s("admin")),
+      Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))
+    ))));
 
-    Either<Error, HashMap<String, HashMap<Long, Set<Fact>>>> verifierResult = verifier.verify();
+    Either<Error, Void> verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("verifier failure: {}", verifierResult.getLeft());
     } else {
