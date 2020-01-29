@@ -1,10 +1,26 @@
 # Pulsar Biscuit Authentication & Authorization plugins
 
-## Tests
+## Status
+
+Still in development.
+
+Missing: https://github.com/streamnative/pulsar/issues/25
+
+Command `PARTITIONED_METADATA_RESPONSE` is not authorized even for admin, you can check it out using `mvn install`.
+
+```
+[FailedCaveat.FailedVerifier { caveat_id: 0, rule: checked_issuperuser_right(#admin) <- right(#authority, #admin) |  }]
+11:14:36.505 [pulsar-io-22-1] ERROR com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit - verifier failure: Error.FailedLogic{ error: LogicError.FailedCaveats{ errors: [FailedCaveat.FailedVerifier { caveat_id: 0, rule: checked_issuperuser_right(#admin) <- right(#authority, #admin) |  }] } }
+```
+
+## Build & Tests
 
 ```bash
-# run all tests
+# run all tests and build
 mvn clean install
+
+# build module like biscuit-pulsar only
+mvn clean install -pl biscuit-pulsar
 
 # build without tests
 mvn clean install -Dmaven.test.skip=true
@@ -15,7 +31,8 @@ mvn clean install -Dtest=AuthorizationProviderBiscuitTest -pl biscuit-pulsar
 
 ## Configuration
 
-copy jars (from `build/libs`) to pulsar's `/lib` directory:
+The listed dependencies can be necessary to add to the /lib of pulsar folder as jars:
+
 - biscuit-pulsar
 - vavr
 - vavr-match
@@ -23,6 +40,10 @@ copy jars (from `build/libs`) to pulsar's `/lib` directory:
 - commons-codec
 - biscuit-java
 - curve25519-elisabeth
+
+As we are using Maven, you should find all of them in `~/.m2/...`
+
+In your `broker.conf`:
 
 ```bash
 # Enable authentication
