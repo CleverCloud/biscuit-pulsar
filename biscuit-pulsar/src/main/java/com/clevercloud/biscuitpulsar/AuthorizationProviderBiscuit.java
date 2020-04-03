@@ -160,7 +160,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
       Arrays.asList(topicRight(topicName, "produce"))
     )));
 
-    Either<Error, Void> verifierResult = verifier.verify();
+    Either verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("produce verifier failure: {}", verifierResult.getLeft());
     } else {
@@ -210,7 +210,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
       )
     )));
 
-    Either<Error, Void> verifierResult = verifier.verify();
+    Either verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("consume verifier failure: {}", verifierResult.getLeft());
     } else {
@@ -251,7 +251,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
       Arrays.asList(topicRight(topicName, "lookup"))
     )));
 
-    Either<Error, Void> verifierResult = verifier.verify();
+    Either verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("lookup verifier failure: {}", verifierResult.getLeft());
     } else {
@@ -290,7 +290,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
       )
     )));
 
-    Either<Error, Void> verifierResult = verifier.verify();
+    Either verifierResult = verifier.verify();
     permissionFuture.complete(verifierResult.isRight());
 
     return permissionFuture;
@@ -319,7 +319,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
       Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))
     ))));
 
-    Either<Error, Void> verifierResult = verifier.verify();
+    Either verifierResult = verifier.verify();
     if(verifierResult.isLeft()) {
       LOGGER.error("verifier failure: {}", verifierResult.getLeft());
     } else {
