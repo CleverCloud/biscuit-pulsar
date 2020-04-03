@@ -4,14 +4,7 @@
 
 Still in development.
 
-Missing: https://github.com/streamnative/pulsar/issues/25
-
-Command `PARTITIONED_METADATA_RESPONSE` is not authorized even for admin, you can check it out using `mvn install`.
-
-```
-[FailedCaveat.FailedVerifier { caveat_id: 0, rule: checked_issuperuser_right(#admin) <- right(#authority, #admin) |  }]
-11:14:36.505 [pulsar-io-22-1] ERROR com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit - verifier failure: Error.FailedLogic{ error: LogicError.FailedCaveats{ errors: [FailedCaveat.FailedVerifier { caveat_id: 0, rule: checked_issuperuser_right(#admin) <- right(#authority, #admin) |  }] } }
-```
+Missing: https://github.com/apache/pulsar/issues/5720 to manage pulsar's resources. Currently we can only producer/consume.
 
 ## Build & Tests
 
