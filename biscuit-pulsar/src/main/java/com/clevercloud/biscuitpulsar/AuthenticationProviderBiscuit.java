@@ -91,8 +91,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
   private String parseBiscuit(final String biscuit) throws AuthenticationException {
     LOGGER.info("Biscuit to parse: {}", biscuit);
-
-    Either<Error, Biscuit> deser = Biscuit.from_bytes(Base64.getUrlDecoder().decode(biscuit));
+    Either<Error, Biscuit> deser = Biscuit.from_b64(biscuit);
 
     if (deser.isLeft()) {
       throw new AuthenticationException("Could not deserialize biscuit");
