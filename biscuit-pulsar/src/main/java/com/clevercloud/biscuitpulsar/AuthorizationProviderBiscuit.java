@@ -145,6 +145,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     if(res.isLeft()) {
       LOGGER.error("could not create verifier");
       permissionFuture.complete(false);
+      return permissionFuture;
     }
 
     LOGGER.info("created verifier");
@@ -183,6 +184,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     Either<Error, Verifier> res = verifierFromBiscuit(role);
     if(res.isLeft()) {
       permissionFuture.complete(false);
+      return permissionFuture;
     }
 
     Verifier verifier = res.get();
@@ -233,6 +235,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     Either<Error, Verifier> res = verifierFromBiscuit(role);
     if(res.isLeft()) {
       permissionFuture.complete(false);
+      return permissionFuture;
     }
 
     Verifier verifier = res.get();
@@ -274,6 +277,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     Either<Error, Verifier> res = verifierFromBiscuit(role);
     if(res.isLeft()) {
       permissionFuture.complete(false);
+      return permissionFuture;
     }
 
     Verifier verifier = res.get();
@@ -309,6 +313,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     Either<Error, Verifier> res = verifierFromBiscuit(role);
     if(res.isLeft()) {
       permissionFuture.complete(false);
+      return permissionFuture;
     }
 
     Verifier verifier = res.get();
