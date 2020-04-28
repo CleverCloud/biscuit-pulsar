@@ -59,9 +59,7 @@ public class BiscuitPulsarIntegrationTest {
     byte[] seed = {0, 0, 0, 0};
     SecureRandom rng = new SecureRandom(seed);
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
-
-    byte[] data = b.serialize().get();
-    String biscuit = Base64.getUrlEncoder().encodeToString(data);
+    String biscuit = b.serialize_b64().get();
 
     LOGGER.info("BISCUIT");
     LOGGER.info(biscuit);

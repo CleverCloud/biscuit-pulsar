@@ -43,8 +43,6 @@ public class AuthenticationProviderBiscuitTest {
     SecureRandom rng = new SecureRandom(seed);
     Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
 
-    byte[] data = b.serialize().get();
-
     AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
 
     Properties properties = new Properties();
@@ -54,7 +52,7 @@ public class AuthenticationProviderBiscuitTest {
     conf.setProperties(properties);
     provider.initialize(conf);
 
-    String biscuit = Base64.getUrlEncoder().encodeToString(data);
+    String biscuit = b.serialize_b64().get();
 
     String subject = provider.authenticate(new AuthenticationDataSource() {
       @Override
