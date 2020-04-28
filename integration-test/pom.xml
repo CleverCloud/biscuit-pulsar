@@ -95,11 +95,25 @@
         <configuration>
           <components>
             <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
-              <componentName>PULSAR</componentName>
-              <artifactId>hadoop-unit-pulsar-standalone</artifactId>
+              <componentName>ZOOKEEPER</componentName>
+              <artifactId>hadoop-unit-zookeeper</artifactId>
               <groupId>fr.jetoile.hadoop</groupId>
               <version>${hadoop-unit.version}</version>
-              <mainClass>fr.jetoile.hadoopunit.component.PulsarStandaloneBootstrap</mainClass>
+              <mainClass>fr.jetoile.hadoopunit.component.ZookeeperBootstrap</mainClass>
+            </componentArtifact>
+            <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
+              <componentName>BOOKKEEPER</componentName>
+              <artifactId>hadoop-unit-bookkeeper</artifactId>
+              <groupId>fr.jetoile.hadoop</groupId>
+              <version>${hadoop-unit.version}</version>
+              <mainClass>fr.jetoile.hadoopunit.component.BookkeeperBootstrap</mainClass>
+            </componentArtifact>
+            <componentArtifact implementation="fr.jetoile.hadoopunit.ComponentArtifact">
+              <componentName>PULSAR</componentName>
+              <artifactId>hadoop-unit-pulsar</artifactId>
+              <groupId>fr.jetoile.hadoop</groupId>
+              <version>${hadoop-unit.version}</version>
+              <mainClass>fr.jetoile.hadoopunit.component.PulsarBootstrap</mainClass>
               <properties>
                 <pulsar.extraClasspath>com.clevercloud:biscuit-pulsar:1.0-SNAPSHOT</pulsar.extraClasspath>
                 <pulsar.authentication.enabled>true</pulsar.authentication.enabled>
