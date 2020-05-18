@@ -17,7 +17,6 @@ import org.apache.pulsar.common.policies.data.AuthAction;
 import org.apache.pulsar.common.policies.data.NamespaceOperation;
 import org.apache.pulsar.common.policies.data.PolicyName;
 import org.apache.pulsar.common.policies.data.PolicyOperation;
-import org.apache.pulsar.common.policies.data.TenantInfo;
 import org.apache.pulsar.common.policies.data.TenantOperation;
 import org.apache.pulsar.common.policies.data.TopicOperation;
 import org.apache.pulsar.common.util.FutureUtil;
@@ -60,6 +59,15 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     private Predicate topicRight(TopicName topicName, String right) {
         return pred("right", Arrays.asList(s("authority"), s("topic"),
                 string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(right)));
+    }
+
+    private Fact namespace(NamespaceName namespaceName) {
+        return fact("namespace", Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName())));
+    }
+
+    private Predicate namespaceOperationRight(NamespaceName namespaceName, String right) {
+        return pred("right", Arrays.asList(s("authority"), s("namespace"),
+                string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(right)));
     }
 
     private Predicate topicSubscriptionRight(TopicName topicName, String subscription, String right) {
@@ -382,29 +390,64 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
     @Override
     public CompletableFuture<Boolean> allowTenantOperationAsync(String tenantName, String originalRole, String role, TenantOperation operation, AuthenticationDataSource authData) {
-      if (!role.startsWith("biscuit:")) {
-        return defaultProvider.allowTenantOperationAsync(tenantName, originalRole, originalRole, operation, authData);
-      }
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowTenantOperationAsync(tenantName, originalRole, originalRole, operation, authData);
+        }
 
-      return FutureUtil.failedFuture(new IllegalStateException("allowTenantOperationAsync is not implemented for biscuit."));
+        return FutureUtil.failedFuture(new IllegalStateException("allowTenantOperationAsync is not implemented for biscuit."));
     }
 
     @Override
     public CompletableFuture<Boolean> allowNamespaceOperationAsync(NamespaceName namespaceName, String originalRole, String role, NamespaceOperation operation, AuthenticationDataSource authData) {
-      if (!role.startsWith("biscuit:")) {
-        return defaultProvider.allowNamespaceOperationAsync(namespaceName, originalRole, originalRole, operation, authData);
-      }
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowNamespaceOperationAsync(namespaceName, originalRole, originalRole, operation, authData);
+        }
 
-      return FutureUtil.failedFuture(new IllegalStateException("allowNamespaceOperationAsync is not implemented for biscuit."));
+        LOGGER.info(String.format("allowNamespaceOperationAsync [%s] on [%s]...", operation.toString(), namespaceName.toString()));
+        CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
+
+        Either<Error, Verifier> res = verifierFromBiscuit(role);
+        if (res.isLeft()) {
+            permissionFuture.complete(false);
+            return permissionFuture;
+        }
+
+        Verifier verifier = res.get();
+
+        verifier.add_fact(namespace(namespaceName));
+        verifier.set_time();
+
+        switch (operation) {
+            case CREATE_TOPIC:
+                verifier.add_operation("create_topic");
+                verifier.add_caveat(caveat(rule(
+                        "checked_createtopic_right",
+                        Arrays.asList(string(namespaceName.getTenant()), string(namespaceName.getLocalName())),
+                        Arrays.asList(namespaceOperationRight(namespaceName, "create_topic"))
+                )));
+                break;
+        }
+
+        LOGGER.info(verifier.print_world());
+        Either verifierResult = verifier.verify();
+        if (verifierResult.isLeft()) {
+            LOGGER.error("verifier failure: {}", verifierResult.getLeft());
+        } else {
+            LOGGER.info(String.format("allowNamespaceOperationAsync [%s] on [%s] authorized", operation.toString(), namespaceName.toString()));
+        }
+
+        permissionFuture.complete(verifierResult.isRight());
+
+        return permissionFuture;
     }
 
     @Override
     public CompletableFuture<Boolean> allowNamespacePolicyOperationAsync(NamespaceName namespaceName, PolicyName policy, PolicyOperation operation, String originalRole, String role, AuthenticationDataSource authData) {
-      if (!role.startsWith("biscuit:")) {
-        return defaultProvider.allowNamespacePolicyOperationAsync(namespaceName, policy, operation, originalRole, role, authData);
-      }
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowNamespacePolicyOperationAsync(namespaceName, policy, operation, originalRole, role, authData);
+        }
 
-      return FutureUtil.failedFuture(new IllegalStateException("allowNamespacePolicyOperationAsync is not implemented for biscuit."));
+        return FutureUtil.failedFuture(new IllegalStateException("allowNamespacePolicyOperationAsync is not implemented for biscuit."));
     }
 
     @Override
