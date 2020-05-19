@@ -90,7 +90,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   }
 
   private String parseBiscuit(final String biscuit) throws AuthenticationException {
-    LOGGER.info("Biscuit to parse: {}", biscuit);
+    LOGGER.debug("Biscuit to parse: {}", biscuit);
     try {
       Either<Error, Biscuit> deser = Biscuit.from_b64(biscuit);
 
@@ -98,15 +98,15 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
         throw new AuthenticationException("Could not deserialize biscuit");
       } else {
         Biscuit realBiscuit = deser.get();
-        LOGGER.info("Deserialized biscuit");
+        LOGGER.debug("Deserialized biscuit");
 
         if (realBiscuit.check_root_key(rootKey).isLeft()) {
           throw new AuthenticationException("This biscuit was not generated with the expected root key");
         }
-        LOGGER.info("Root key is valid");
+        LOGGER.debug("Root key is valid");
 
         byte[] sealed = realBiscuit.seal(BISCUIT_SEALING_KEY.getBytes()).get();
-        LOGGER.info("Biscuit deserialized and sealed");
+        LOGGER.debug("Biscuit deserialized and sealed");
         return "biscuit:" + Base64.getEncoder().encodeToString(sealed);
       }
     } catch (IllegalArgumentException e) {
