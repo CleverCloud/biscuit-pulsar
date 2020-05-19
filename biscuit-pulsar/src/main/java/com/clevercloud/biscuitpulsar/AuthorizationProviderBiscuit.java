@@ -76,19 +76,17 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     public Either<Error, Verifier> verifierFromBiscuit(String role) {
-        LOGGER.info("verifierFromBiscuit: got role: {}", role);
         Either<Error, Biscuit> deser = Biscuit.from_sealed(
                 Base64.getDecoder().decode(role.substring("biscuit:".length())),
                 AuthenticationProviderBiscuit.BISCUIT_SEALING_KEY.getBytes()
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();
-            System.out.println(e);
+            LOGGER.error(e.toString());
             return Left(e);
         }
 
         Biscuit token = deser.get();
-        LOGGER.info("will authorize with token:\n{}", token.print());
 
         Either<Error, Verifier> res = token.verify_sealed();
         if (res.isLeft()) {
@@ -139,7 +137,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         pred("subscription", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
                 )));
 
-        verifier.print_world();
+        LOGGER.debug(verifier.print_world());
+
         return Right(verifier);
     }
 
@@ -157,11 +156,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
-        LOGGER.info("got role : {}", role);
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            LOGGER.error("could not create verifier");
+            LOGGER.error("could not create verifier {}", res.getLeft().toString());
             permissionFuture.complete(false);
             return permissionFuture;
         }
@@ -324,7 +322,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.isSuperUser(role, serviceConfiguration);
         }
 
-        LOGGER.info("BISCUIT: isSuperUser? got role: {}", role);
         CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
@@ -359,7 +356,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.isSuperUser(role, serviceConfiguration);
         }
 
-        LOGGER.info("BISCUIT: isSuperUser? got role: {}", role);
         CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
