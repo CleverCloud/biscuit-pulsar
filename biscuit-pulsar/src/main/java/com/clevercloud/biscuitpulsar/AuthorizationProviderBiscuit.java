@@ -342,7 +342,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         if (verifierResult.isLeft()) {
             LOGGER.error("verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.info("superuser authorized by biscuit token");
+            LOGGER.debug("superuser authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -376,7 +376,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         if (verifierResult.isLeft()) {
             LOGGER.error("verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.info("superuser authorized by biscuit token");
+            LOGGER.debug("superuser authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
