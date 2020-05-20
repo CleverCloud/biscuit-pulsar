@@ -87,8 +87,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Biscuit token = deser.get();
-
         Either<Error, Verifier> res = token.verify_sealed();
+
         if (res.isLeft()) {
             return res;
         }
@@ -168,7 +168,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return permissionFuture;
         }
 
-        LOGGER.debug("created verifier");
         Verifier verifier = res.get();
         verifier.add_fact(namespace(NamespaceName.get(topicName.getTenant(), topicName.getNamespacePortion())));
         verifier.add_fact(topic(topicName));
@@ -185,7 +184,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         if (verifierResult.isLeft()) {
             LOGGER.error("produce verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.info("produce request authorized by biscuit token");
+            LOGGER.debug("produce request authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -232,11 +231,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 )
         )));
 
+        //LOGGER.error(verifier.print_world());
+
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             LOGGER.error("consume verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.info("consume request authorized by biscuit token");
+            LOGGER.debug("consume request authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -428,6 +429,34 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             case CREATE_TOPIC:
                 verifier.add_operation("create_topic");
                 break;
+            case GET_TOPIC:
+                verifier.add_operation("get_topic");
+                break;
+            case GET_TOPICS:
+                verifier.add_operation("get_topics");
+                break;
+            case DELETE_TOPIC:
+                verifier.add_operation("delete_topic");
+                break;
+
+            case ADD_BUNDLE:
+                verifier.add_operation("add_bundle");
+                break;
+            case DELETE_BUNDLE:
+                verifier.add_operation("delete_bundle");
+                break;
+            case GET_BUNDLE:
+                verifier.add_operation("get_bundle");
+                break;
+
+            case CLEAR_BACKLOG:
+                verifier.add_operation("clear_backlog");
+                break;
+            case UNSUBSCRIBE:
+                verifier.add_operation("unsubscribe");
+                break;
+            default:
+                throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%] is not implemented.", operation.toString()));
         }
 
         Either verifierResult = verifier.verify();
@@ -439,10 +468,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         permissionFuture.complete(verifierResult.isRight());
 
-        CompletableFuture<Boolean> isSuperUserFuture = isSuperUser(role, conf);
-
-        return isSuperUserFuture
-                .thenCombine(permissionFuture, (isSuperUser, isAuthorized) -> isSuperUser || isAuthorized);
+        return permissionFuture.thenCompose(isAuthorized -> {
+            if (isAuthorized) {
+                return CompletableFuture.completedFuture(true);
+            } else {
+                return isSuperUser(role, conf);
+            }
+        });
     }
 
     @Override
