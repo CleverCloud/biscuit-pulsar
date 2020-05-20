@@ -456,7 +456,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 verifier.add_operation("unsubscribe");
                 break;
             default:
-                throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%] is not implemented.", operation.toString()));
+                throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
 
         Either verifierResult = verifier.verify();
