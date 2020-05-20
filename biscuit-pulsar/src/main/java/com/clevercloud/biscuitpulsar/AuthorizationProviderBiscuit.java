@@ -390,7 +390,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.allowTenantOperationAsync(tenantName, originalRole, originalRole, operation, authData);
         }
 
-        return FutureUtil.failedFuture(new IllegalStateException("allowTenantOperationAsync is not implemented for biscuit."));
+        return isSuperUser(role, conf).thenCompose(isSuperUser -> {
+            if (isSuperUser) {
+                return CompletableFuture.completedFuture(true);
+            } else {
+                return FutureUtil.failedFuture(new IllegalStateException("allowTenantOperationAsync is not implemented for biscuit."));
+            }
+        });
     }
 
     @Override
@@ -434,7 +440,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         permissionFuture.complete(verifierResult.isRight());
 
-        return permissionFuture;
+        CompletableFuture<Boolean> isSuperUserFuture = isSuperUser(role, conf);
+
+        return isSuperUserFuture
+                .thenCombine(permissionFuture, (isSuperUser, isAuthorized) -> isSuperUser || isAuthorized);
     }
 
     @Override
@@ -443,7 +452,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.allowNamespacePolicyOperationAsync(namespaceName, policy, operation, originalRole, role, authData);
         }
 
-        return FutureUtil.failedFuture(new IllegalStateException("allowNamespacePolicyOperationAsync is not implemented for biscuit."));
+        return isSuperUser(role, conf).thenCompose(isSuperUser -> {
+            if (isSuperUser) {
+                return CompletableFuture.completedFuture(true);
+            } else {
+                return FutureUtil.failedFuture(new IllegalStateException("allowNamespacePolicyOperationAsync is not implemented for biscuit."));
+            }
+        });
     }
 
     @Override
