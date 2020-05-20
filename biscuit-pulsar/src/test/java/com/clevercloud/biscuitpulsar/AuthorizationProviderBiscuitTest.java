@@ -2,16 +2,13 @@ package com.clevercloud.biscuitpulsar;
 
 import com.clevercloud.biscuit.crypto.KeyPair;
 import com.clevercloud.biscuit.datalog.SymbolTable;
-import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.builder.Block;
-import io.vavr.control.Either;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.common.policies.data.NamespaceOperation;
-import org.hamcrest.core.StringStartsWith;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 
 import static com.clevercloud.biscuit.crypto.TokenSignature.hex;
 import static com.clevercloud.biscuit.token.builder.Utils.*;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class AuthorizationProviderBiscuitTest {
@@ -51,14 +47,17 @@ public class AuthorizationProviderBiscuitTest {
         KeyPair root = new KeyPair(rng);
         SymbolTable symbols = Biscuit.default_symbol_table();
 
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+
         Block authority_builder = new Block(0, symbols);
         authority_builder.add_rule(
                 rule("right",
-                        Arrays.asList(s("authority"), s("namespace"), string("tenant"), string("namespace"), s("create_topic")),
-                        Arrays.asList(pred("namespace", Arrays.asList(s("ambient"), string("tenant"), string("namespace"))))
+                        Arrays.asList(s("authority"), s("namespace"), string(tenant), string(namespace), s("create_topic")),
+                        Arrays.asList(pred("namespace", Arrays.asList(s("ambient"), string(tenant), string(namespace))))
                 )
         );
-        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("namespace"), string("tenant"), string("namespace"), s("create_topic"))));
+        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s(namespace), string(tenant), string(namespace), s("create_topic"))));
         Biscuit biscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -72,6 +71,7 @@ public class AuthorizationProviderBiscuitTest {
             public boolean hasDataFromCommand() {
                 return true;
             }
+
             @Override
             public String getCommandData() {
                 return biscuit.serialize_b64().get();
@@ -79,8 +79,59 @@ public class AuthorizationProviderBiscuitTest {
         });
 
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        Boolean authorized = authorizationProvider.allowNamespaceOperation(NamespaceName.get("clevercloud/logs"), null, authedBiscuit, NamespaceOperation.CREATE_TOPIC, null);
+        Boolean authorized = authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CREATE_TOPIC, null);
         assertTrue(authorized);
+    }
+
+    @Test
+    public void testReadWriteTopicInNamespace() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_rule(
+                rule("right",
+                        Arrays.asList(s("authority"), s("namespace"), string(tenant), string(namespace), s("create_topic")),
+                        Arrays.asList(pred("namespace", Arrays.asList(s("ambient"), string(tenant), string(namespace))))
+                )
+        );
+        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s(namespace), string(tenant), string(namespace), s("create_topic"))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("topic"), string(tenant), string(namespace), var(2), s("produce")),
+                Arrays.asList(pred("topic", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("topic"), string(tenant), string(namespace), var(2), s("consume")),
+                Arrays.asList(pred("topic", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2))))));
+        Biscuit biscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+
+            @Override
+            public String getCommandData() {
+                return biscuit.serialize_b64().get();
+            }
+        });
+
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertTrue(authorizationProvider.canConsumeAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, null, null).get());
+        assertTrue(authorizationProvider.canConsumeAsync(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, null, null).get());
+        assertTrue(authorizationProvider.canProduceAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, null).get());
+        assertTrue(authorizationProvider.canProduceAsync(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, null).get());
     }
 
     @Test
