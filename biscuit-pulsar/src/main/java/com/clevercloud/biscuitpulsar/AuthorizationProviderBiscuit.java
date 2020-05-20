@@ -108,7 +108,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         pred("right", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("produce"))),
                         pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2)))
                 )));
-
+        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("create_topic")),
+                Arrays.asList(
+                        pred("right", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("create_topic"))),
+                        pred("namespace", Arrays.asList(s("ambient"), var(0), var(1)))
+                )));
         verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("consume")),
                 Arrays.asList(
                         pred("right", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("consume"))),
@@ -164,9 +168,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return permissionFuture;
         }
 
-        LOGGER.info("created verifier");
+        LOGGER.debug("created verifier");
         Verifier verifier = res.get();
-
+        verifier.add_fact(namespace(NamespaceName.get(topicName.getTenant(), topicName.getNamespacePortion())));
         verifier.add_fact(topic(topicName));
         verifier.add_operation("produce");
         verifier.set_time();
@@ -204,7 +208,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-
+        verifier.add_fact(namespace(NamespaceName.get(topicName.getTenant(), topicName.getNamespacePortion())));
         verifier.add_fact(topic(topicName));
         verifier.add_operation("consume");
         verifier.add_fact(subscription(topicName, subscription));
@@ -423,15 +427,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         switch (operation) {
             case CREATE_TOPIC:
                 verifier.add_operation("create_topic");
-                verifier.add_caveat(caveat(rule(
-                        "checked_createtopic_right",
-                        Arrays.asList(string(namespaceName.getTenant()), string(namespaceName.getLocalName())),
-                        Arrays.asList(namespaceOperationRight(namespaceName, "create_topic"))
-                )));
                 break;
         }
 
-        LOGGER.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             LOGGER.error("verifier failure: {}", verifierResult.getLeft());
