@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory;
 import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -144,6 +146,7 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
 
         Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("revocation_id", Arrays.asList(date(Date.from(Instant.now())))));
         authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
         authority_builder.add_rule(rule("right",
                 Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("create_topic")),
