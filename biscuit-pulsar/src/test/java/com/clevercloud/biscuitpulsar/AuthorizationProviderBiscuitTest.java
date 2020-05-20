@@ -149,6 +149,30 @@ public class AuthorizationProviderBiscuitTest {
                 Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("create_topic")),
                 Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
         authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("get_topic")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("get_topics")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("delete_topic")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("add_bundle")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("delete_bundle")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("get_bundle")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("clear_backlog")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("unsubscribe")),
+                Arrays.asList(pred("namespace", Arrays.asList(s("authority"), var(0), var(1))))));
+        authority_builder.add_rule(rule("right",
                 Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("produce")),
                 Arrays.asList(pred("topic", Arrays.asList(s("authority"),  var(0), var(1), var(2))))));
         authority_builder.add_rule(rule("right",
@@ -184,6 +208,14 @@ public class AuthorizationProviderBiscuitTest {
 
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.GET_TOPIC, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.GET_TOPICS, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.ADD_BUNDLE, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.DELETE_BUNDLE, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.GET_BUNDLE, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CLEAR_BACKLOG, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.UNSUBSCRIBE, null));
         assertTrue(authorizationProvider.canConsumeAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, null, null).get());
         assertTrue(authorizationProvider.canConsumeAsync(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, null, null).get());
         assertTrue(authorizationProvider.canProduceAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, null).get());
