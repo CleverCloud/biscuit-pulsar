@@ -26,8 +26,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 import static com.clevercloud.biscuit.token.builder.Utils.*;
 import static io.vavr.API.Left;
@@ -483,11 +485,42 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.allowNamespacePolicyOperationAsync(namespaceName, policy, operation, originalRole, role, authData);
         }
 
-        return isSuperUser(role, conf).thenCompose(isSuperUser -> {
-            if (isSuperUser) {
+        log.debug(String.format("allowNamespacePolicyOperationAsync [%s]:[%s] on [%s]...", policy.toString(), operation.toString(), namespaceName.toString()));
+        CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
+
+        Either<Error, Verifier> res = verifierFromBiscuit(role);
+        if (res.isLeft()) {
+            permissionFuture.complete(false);
+            return permissionFuture;
+        }
+
+        Verifier verifier = res.get();
+        verifier.add_fact(namespace(namespaceName));
+        verifier.set_time();
+
+        Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
+
+        if (policyName.isPresent()) {
+            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
+            verifier.add_operation(policyName.toString().toLowerCase() + "_" + operation.toString().toLowerCase());
+        } else {
+            throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
+        }
+
+        Either verifierResult = verifier.verify();
+        if (verifierResult.isLeft()) {
+            log.error("verifier failure: {}", verifierResult.getLeft());
+        } else {
+            log.debug(String.format("allowNamespacePolicyOperationAsync [%s]:[%s] on [%s] authorized.", policy.toString(), operation.toString(), namespaceName.toString()));
+        }
+
+        permissionFuture.complete(verifierResult.isRight());
+
+        return permissionFuture.thenCompose(isAuthorized -> {
+            if (isAuthorized) {
                 return CompletableFuture.completedFuture(true);
             } else {
-                return FutureUtil.failedFuture(new IllegalStateException("allowNamespacePolicyOperationAsync is not implemented for biscuit."));
+                return isSuperUser(role, conf);
             }
         });
     }
