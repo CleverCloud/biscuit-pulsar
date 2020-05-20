@@ -163,7 +163,7 @@ public class AuthorizationProviderBiscuitTest {
         )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
-        LOGGER.debug(biscuit.print());
+        //LOGGER.debug(biscuit.print());
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
         Properties properties = new Properties();
         properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));

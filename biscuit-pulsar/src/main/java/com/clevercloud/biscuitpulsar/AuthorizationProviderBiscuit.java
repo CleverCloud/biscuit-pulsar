@@ -411,7 +411,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.allowNamespaceOperationAsync(namespaceName, originalRole, originalRole, operation, authData);
         }
 
-        log.info(String.format("allowNamespaceOperationAsync [%s] on [%s]...", operation.toString(), namespaceName.toString()));
+        log.debug(String.format("allowNamespaceOperationAsync [%s] on [%s]...", operation.toString(), namespaceName.toString()));
         CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
@@ -463,7 +463,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         if (verifierResult.isLeft()) {
             log.error("verifier failure: {}", verifierResult.getLeft());
         } else {
-            log.info(String.format("allowNamespaceOperationAsync [%s] on [%s] authorized", operation.toString(), namespaceName.toString()));
+            log.debug(String.format("allowNamespaceOperationAsync [%s] on [%s] authorized", operation.toString(), namespaceName.toString()));
         }
 
         permissionFuture.complete(verifierResult.isRight());
