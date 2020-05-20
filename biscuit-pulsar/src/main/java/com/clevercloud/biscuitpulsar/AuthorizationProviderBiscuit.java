@@ -338,6 +338,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))
                 ))));
 
+        LOGGER.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             LOGGER.error("verifier failure: {}", verifierResult.getLeft());
@@ -430,7 +431,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 break;
         }
 
-        LOGGER.info(verifier.print_world());
+        LOGGER.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             LOGGER.error("verifier failure: {}", verifierResult.getLeft());
