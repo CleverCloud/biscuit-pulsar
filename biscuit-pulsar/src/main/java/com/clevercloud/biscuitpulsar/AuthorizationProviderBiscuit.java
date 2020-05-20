@@ -428,37 +428,18 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.set_time();
 
         switch (operation) {
-            case CREATE_TOPIC:
-                verifier.add_operation("create_topic");
-                break;
-            case GET_TOPIC:
-                verifier.add_operation("get_topic");
-                break;
-            case GET_TOPICS:
-                verifier.add_operation("get_topics");
-                break;
-            case DELETE_TOPIC:
-                verifier.add_operation("delete_topic");
-                break;
+            case CREATE_TOPIC: verifier.add_operation("create_topic"); break;
+            case GET_TOPIC: verifier.add_operation("get_topic"); break;
+            case GET_TOPICS: verifier.add_operation("get_topics"); break;
+            case DELETE_TOPIC: verifier.add_operation("delete_topic"); break;
 
-            case ADD_BUNDLE:
-                verifier.add_operation("add_bundle");
-                break;
-            case DELETE_BUNDLE:
-                verifier.add_operation("delete_bundle");
-                break;
-            case GET_BUNDLE:
-                verifier.add_operation("get_bundle");
-                break;
+            case ADD_BUNDLE: verifier.add_operation("add_bundle"); break;
+            case DELETE_BUNDLE: verifier.add_operation("delete_bundle"); break;
+            case GET_BUNDLE: verifier.add_operation("get_bundle"); break;
 
-            case CLEAR_BACKLOG:
-                verifier.add_operation("clear_backlog");
-                break;
-            case UNSUBSCRIBE:
-                verifier.add_operation("unsubscribe");
-                break;
-            default:
-                throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
+            case CLEAR_BACKLOG: verifier.add_operation("clear_backlog"); break;
+            case UNSUBSCRIBE: verifier.add_operation("unsubscribe"); break;
+            default: throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
 
         Either verifierResult = verifier.verify();
