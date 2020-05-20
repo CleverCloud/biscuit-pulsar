@@ -34,7 +34,7 @@ import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 
 public class AuthorizationProviderBiscuit implements AuthorizationProvider {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationProviderBiscuit.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthorizationProviderBiscuit.class);
 
     public ServiceConfiguration conf;
     public ConfigurationCacheService configCache;
@@ -82,7 +82,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();
-            LOGGER.error(e.toString());
+            log.error(e.toString());
             return Left(e);
         }
 
@@ -141,7 +141,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         pred("subscription", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
                 )));
 
-        LOGGER.debug(verifier.print_world());
+        //log.debug(verifier.print_world());
 
         return Right(verifier);
     }
@@ -163,7 +163,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            LOGGER.error("could not create verifier {}", res.getLeft().toString());
+            log.error("could not create verifier {}", res.getLeft().toString());
             permissionFuture.complete(false);
             return permissionFuture;
         }
@@ -182,9 +182,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
-            LOGGER.error("produce verifier failure: {}", verifierResult.getLeft());
+            log.error("produce verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.debug("produce request authorized by biscuit token");
+            log.debug("produce request authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -231,13 +231,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 )
         )));
 
-        //LOGGER.error(verifier.print_world());
+        //log.error(verifier.print_world());
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
-            LOGGER.error("consume verifier failure: {}", verifierResult.getLeft());
+            log.error("consume verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.debug("consume request authorized by biscuit token");
+            log.debug("consume request authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -277,9 +277,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
-            LOGGER.error("lookup verifier failure: {}", verifierResult.getLeft());
+            log.error("lookup verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.info("lookup authorized by biscuit token");
+            log.info("lookup authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -343,12 +343,12 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))
                 ))));
 
-        LOGGER.debug(verifier.print_world());
+        log.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
-            LOGGER.error("verifier failure: {}", verifierResult.getLeft());
+            log.error("verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.debug("superuser authorized by biscuit token");
+            log.debug("superuser authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -380,9 +380,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
-            LOGGER.error("verifier failure: {}", verifierResult.getLeft());
+            log.error("verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.debug("superuser authorized by biscuit token");
+            log.debug("superuser authorized by biscuit token");
         }
 
         permissionFuture.complete(verifierResult.isRight());
@@ -411,7 +411,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.allowNamespaceOperationAsync(namespaceName, originalRole, originalRole, operation, authData);
         }
 
-        LOGGER.info(String.format("allowNamespaceOperationAsync [%s] on [%s]...", operation.toString(), namespaceName.toString()));
+        log.info(String.format("allowNamespaceOperationAsync [%s] on [%s]...", operation.toString(), namespaceName.toString()));
         CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
@@ -461,9 +461,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
-            LOGGER.error("verifier failure: {}", verifierResult.getLeft());
+            log.error("verifier failure: {}", verifierResult.getLeft());
         } else {
-            LOGGER.info(String.format("allowNamespaceOperationAsync [%s] on [%s] authorized", operation.toString(), namespaceName.toString()));
+            log.info(String.format("allowNamespaceOperationAsync [%s] on [%s] authorized", operation.toString(), namespaceName.toString()));
         }
 
         permissionFuture.complete(verifierResult.isRight());
