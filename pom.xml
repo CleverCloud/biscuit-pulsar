@@ -21,7 +21,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
 
     <logback-classic.version>1.2.3</logback-classic.version>
-    <biscuit-java.version>0.2.6</biscuit-java.version>
+    <biscuit-java.version>0.2.7</biscuit-java.version>
     <pulsar-broker.version>2.6.0-SNAPSHOT</pulsar-broker.version>
     <grpc.version>1.18.0</grpc.version>
     <vavr.version>0.10.2</vavr.version>
