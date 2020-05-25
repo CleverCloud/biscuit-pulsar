@@ -51,6 +51,7 @@
         <groupId>com.clever-cloud</groupId>
         <artifactId>biscuit-java</artifactId>
         <version>${biscuit-java.version}</version>
+        <type>jar</type>
       </dependency>
       <dependency>
         <groupId>com.clevercloud</groupId>

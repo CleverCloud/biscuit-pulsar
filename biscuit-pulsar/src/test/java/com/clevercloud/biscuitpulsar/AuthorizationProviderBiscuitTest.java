@@ -375,6 +375,7 @@ public class AuthorizationProviderBiscuitTest {
                         "lookup"
                 ))))
         ));
+
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         System.out.println(rootBiscuit.print());
