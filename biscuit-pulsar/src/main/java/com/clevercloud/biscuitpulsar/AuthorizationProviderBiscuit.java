@@ -446,18 +446,18 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
 
-        verifier.add_fact(namespace(namespaceName));
+        //verifier.add_fact(namespace(namespaceName));
         verifier.set_time();
 
         Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
         if (operationName.isPresent()) {
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_fact(fact("ns_operation", Arrays.asList(s("ambient"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), string(operationName.get().toString().toLowerCase()))));
+            verifier.add_fact(fact("ns_operation", Arrays.asList(s("ambient"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
 
-        //log.info(verifier.print_world());
+        log.info(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("verifier failure: {}", verifierResult.getLeft());
@@ -499,12 +499,12 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (policyName.isPresent()) {
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact(fact("ns_operation", Arrays.asList(s("ambient"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), string("policy_" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+            verifier.add_fact(fact("ns_operation", Arrays.asList(s("ambient"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("policy_" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
 
-        //log.info(verifier.print_world());
+        log.info(verifier.print_world());
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {

@@ -351,7 +351,7 @@ public class AuthorizationProviderBiscuitTest {
     }
 
     @Test
-    public void testBuild() {
+    public void testBuilders() {
         SecureRandom rng = new SecureRandom();
         KeyPair root = new KeyPair(rng);
         SymbolTable symbols = Biscuit.default_symbol_table();
