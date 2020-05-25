@@ -48,6 +48,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>3.8.0</version>
+      </dependency>
+      <dependency>
         <groupId>com.clever-cloud</groupId>
         <artifactId>biscuit-java</artifactId>
         <version>${biscuit-java.version}</version>
