@@ -273,19 +273,12 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
 
-        verifier.add_fact(topic(topicName));
-
-        // add both operations because produce and consume rights imply lookup rights
-        verifier.add_operation("produce");
-        verifier.add_operation("consume");
-        verifier.add_operation("lookup");
-        verifier.set_time();
-
-        verifier.add_caveat(caveat(rule(
-                "checked_lookup_right",
-                Arrays.asList(string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
-                Arrays.asList(topicRight(topicName, "lookup"))
-        )));
+        verifier.add_caveat(new Caveat(Arrays.asList(
+                rule("check_right",
+                        Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
+                ))));
+        verifier.add_fact(fact("topic_operation", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))));
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
