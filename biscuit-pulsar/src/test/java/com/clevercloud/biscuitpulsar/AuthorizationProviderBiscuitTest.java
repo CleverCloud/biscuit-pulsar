@@ -33,7 +33,7 @@ import static com.clevercloud.biscuit.token.builder.Utils.*;
 import static org.junit.Assert.*;
 
 public class AuthorizationProviderBiscuitTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationProviderBiscuitTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthorizationProviderBiscuitTest.class);
 
     private com.clevercloud.biscuit.token.builder.Fact topic(TopicName topicName) {
         return fact("topic", Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())));
@@ -237,7 +237,7 @@ public class AuthorizationProviderBiscuitTest {
         });
 
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        LOGGER.debug(biscuit.print());
+        log.debug(biscuit.print());
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.GET_TOPIC, null));
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.GET_TOPICS, null));
@@ -324,7 +324,7 @@ public class AuthorizationProviderBiscuitTest {
             }
         });
 
-        LOGGER.debug(biscuit.print());
+        log.debug(biscuit.print());
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         CompletableFuture<Boolean> authorizedFuture = authorizationProvider.isSuperUser(authedBiscuit, conf);
         assertTrue(authorizedFuture.get());
