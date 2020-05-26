@@ -115,7 +115,7 @@
               <version>${hadoop-unit.version}</version>
               <mainClass>fr.jetoile.hadoopunit.component.PulsarBootstrap</mainClass>
               <properties>
-                <pulsar.extraClasspath>com.clevercloud:biscuit-pulsar:1.0-SNAPSHOT</pulsar.extraClasspath>
+                <pulsar.extraClasspath>com.clevercloud:biscuit-pulsar:1.1.0</pulsar.extraClasspath>
                 <pulsar.authentication.enabled>true</pulsar.authentication.enabled>
                 <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.AuthenticationProviderBiscuit</pulsar.authentication.provider>
                 <pulsar.authorization.enabled>true</pulsar.authorization.enabled>
