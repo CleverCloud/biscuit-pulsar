@@ -139,17 +139,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         pred("subscription", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
                 )));
 
-        verifier.add_caveat(new Caveat(Arrays.asList(
-                rule("check_right",
-                        Arrays.asList(s("ambient"), s("namespace"), var(0), var(1), var(2)),
-                        Arrays.asList(pred("ns_operation", Arrays.asList(s("namespace"), var(0), var(1), var(2))))
-                ),
-                rule("check_right",
-                        Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
-                ))));
-
-
         //*check_right(#authority, #namespace, $0, $1, $2) <- !ns_operation(#authority, #namespace, $0, $1, $2), right(#authority, #namespace, $0, $1, $2) et `*check_right(#authority, #topic, $0, $1, $2, $3) <- !topic_operation(#authority, #topic, $0, $1, $2, $3), right(#authority, #namespace, $0, $1, $2, $3)
 
         //log.debug(verifier.print_world());
@@ -181,6 +170,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
+        verifier.add_caveat(new Caveat(Arrays.asList(
+                rule("check_right",
+                        Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
+                ))));
         verifier.add_fact(fact("topic_operation", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
 
         Either verifierResult = verifier.verify();
@@ -210,6 +204,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
+        verifier.add_caveat(new Caveat(Arrays.asList(
+                rule("check_right",
+                        Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
+                ))));
         //verifier.add_fact(namespace(NamespaceName.get(topicName.getTenant(), topicName.getNamespacePortion())));
         //verifier.add_fact(topic(topicName));
         //verifier.add_operation("consume");
@@ -359,7 +358,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))
                 ))));
 
-        //log.debug(verifier.print_world());
+        log.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("verifier failure: {}", verifierResult.getLeft());
@@ -438,6 +437,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
+        verifier.add_caveat(new Caveat(Arrays.asList(
+                rule("check_right",
+                        Arrays.asList(s("ambient"), s("namespace"), var(0), var(1), var(2)),
+                        Arrays.asList(pred("ns_operation", Arrays.asList(s("namespace"), var(0), var(1), var(2))))
+                ))));
 
         Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
         if (operationName.isPresent()) {
@@ -483,6 +487,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
+        verifier.add_caveat(new Caveat(Arrays.asList(
+                rule("check_right",
+                        Arrays.asList(s("ambient"), s("namespace"), var(0), var(1), var(2)),
+                        Arrays.asList(pred("ns_operation", Arrays.asList(s("namespace"), var(0), var(1), var(2))))
+                ))));
 
         Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
 
