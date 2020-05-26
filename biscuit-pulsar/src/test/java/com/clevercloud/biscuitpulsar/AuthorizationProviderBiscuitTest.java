@@ -157,6 +157,7 @@ public class AuthorizationProviderBiscuitTest {
                 Arrays.asList(s("authority"), s("namespace"), var(0), var(1), var(2)),
                 Arrays.asList(pred("ns_operation", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), var(2)))),
                 Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
+                        /*** NamespaceOperation ***/
                         "create_topic",
                         "get_topic",
                         "get_topics",
@@ -169,7 +170,46 @@ public class AuthorizationProviderBiscuitTest {
                         "revoke_permission",
                         "clear_backlog",
                         "unsubscribe",
-                        "policy_all_read"
+
+                        /*** PolicyName ***/
+                        "all_read",
+                        "all_write",
+                        "anty_affinity_write",
+                        "anty_affinity_read",
+                        "backlog_read",
+                        "backlog_write",
+                        "compaction_read",
+                        "compaction_write",
+                        "delayed_delivery_read",
+                        "delayed_delivery_write",
+                        "deduplication_read",
+                        "deduplication_write",
+                        "max_consumers_read",
+                        "max_consumers_write",
+                        "max_producers_read",
+                        "max_producers_write",
+                        "max_unacked_read",
+                        "max_unacked_write",
+                        "offload_read",
+                        "offload_write",
+                        "persistence_read",
+                        "persistence_write",
+                        "rate_write",
+                        "rate_read",
+                        "retention_read",
+                        "retention_write",
+                        "replication_read",
+                        "replication_write",
+                        "replication_rate_read",
+                        "replication_rate_write",
+                        "schema_compatibility_strategy_read",
+                        "schema_compatibility_strategy_write",
+                        "subscription_auth_mode_read",
+                        "subscription_auth_mode_write",
+                        "encryption_read",
+                        "encryption_write",
+                        "ttl_read",
+                        "ttl_write"
                 ))))
         ));
         authority_builder.add_rule(constrained_rule("right",
@@ -190,6 +230,7 @@ public class AuthorizationProviderBiscuitTest {
                                 Arrays.asList(s("namespace"), string(tenant), string(namespace), var(2)),
                                 Arrays.asList(pred("ns_operation", Arrays.asList(s("namespace"), string(tenant), string(namespace), var(2)))),
                                 Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
+                                        /*** NamespaceOperation ***/
                                         "create_topic",
                                         "get_topic",
                                         "get_topics",
@@ -197,12 +238,51 @@ public class AuthorizationProviderBiscuitTest {
                                         "add_bundle",
                                         "delete_bundle",
                                         "get_bundle",
-                                        "get_permission",
-                                        "grant_permission",
-                                        "revoke_permission",
+                                        //"get_permission",
+                                        //"grant_permission",
+                                        //"revoke_permission",
                                         "clear_backlog",
                                         "unsubscribe",
-                                        "policy_all_read"
+
+                                        /*** PolicyName ***/
+                                        "all_read",
+                                        //"all_write",
+                                        "anty_affinity_read",
+                                        //"anty_affinity_write",
+                                        "backlog_read",
+                                        "backlog_write",
+                                        "compaction_read",
+                                        "compaction_write",
+                                        "delayed_delivery_read",
+                                        "delayed_delivery_write",
+                                        "deduplication_read",
+                                        "deduplication_write",
+                                        "max_consumers_read",
+                                        "max_consumers_write",
+                                        "max_producers_read",
+                                        "max_producers_write",
+                                        "max_unacked_read",
+                                        "max_unacked_write",
+                                        "offload_read",
+                                        "offload_write",
+                                        "persistence_read",
+                                        "persistence_write",
+                                        "rate_write",
+                                        "rate_read",
+                                        "retention_read",
+                                        "retention_write",
+                                        "replication_read",
+                                        //"replication_write",
+                                        "replication_rate_read",
+                                        //"replication_rate_write",
+                                        "schema_compatibility_strategy_read",
+                                        "schema_compatibility_strategy_write",
+                                        //"subscription_auth_mode_read",
+                                        //"subscription_auth_mode_write",
+                                        "encryption_read",
+                                        "encryption_write",
+                                        "ttl_read",
+                                        "ttl_write"
                                 ))))
                         ),
                         constrained_rule("limited_right",
@@ -250,7 +330,11 @@ public class AuthorizationProviderBiscuitTest {
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CLEAR_BACKLOG, null));
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.UNSUBSCRIBE, null));
         assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.ALL, PolicyOperation.READ, null, authedBiscuit, null));
-        assertFalse(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.OFFLOAD, PolicyOperation.WRITE, null, authedBiscuit, null));
+        assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.TTL, PolicyOperation.READ, null, authedBiscuit, null));
+        assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.OFFLOAD, PolicyOperation.WRITE, null, authedBiscuit, null));
+        assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.SCHEMA_COMPATIBILITY_STRATEGY, PolicyOperation.WRITE, null, authedBiscuit, null));
+        assertFalse(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.REPLICATION, PolicyOperation.WRITE, null, authedBiscuit, null));
+        assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.REPLICATION, PolicyOperation.READ, null, authedBiscuit, null));
         AuthenticationDataSource authData = new AuthenticationDataSource() {
             @Override
             public String getSubscription() {

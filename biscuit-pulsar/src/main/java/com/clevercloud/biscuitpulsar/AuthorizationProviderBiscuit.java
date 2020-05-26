@@ -487,7 +487,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (policyName.isPresent()) {
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact(fact("ns_operation", Arrays.asList(s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("policy_" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+            verifier.add_fact(fact("ns_operation", Arrays.asList(s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
