@@ -142,11 +142,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
                         Arrays.asList(s("ambient"), s("namespace"), var(0), var(1), var(2)),
-                        Arrays.asList(pred("ns_operation", Arrays.asList(s("ambient"), s("namespace"), var(0), var(1), var(2))))
+                        Arrays.asList(pred("ns_operation", Arrays.asList(s("namespace"), var(0), var(1), var(2))))
                 ),
                 rule("check_right",
                         Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3))))
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
                 ))));
 
 
@@ -180,16 +180,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        verifier.add_fact(namespace(NamespaceName.get(topicName.getTenant(), topicName.getNamespacePortion())));
-        verifier.add_fact(topic(topicName));
-        verifier.add_operation("produce");
         verifier.set_time();
-
-        verifier.add_caveat(caveat(rule(
-                "checked_produce_right",
-                Arrays.asList(string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
-                Arrays.asList(topicRight(topicName, "produce"))
-        )));
+        verifier.add_fact(fact("topic_operation", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
@@ -222,7 +214,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         //verifier.add_fact(topic(topicName));
         //verifier.add_operation("consume");
 
-        verifier.add_fact(fact("topic_operation", Arrays.asList(s("ambient"), s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
+        verifier.add_fact(fact("topic_operation", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
         //verifier.add_fact(subscription(topicName, subscription));
         verifier.set_time();
 
@@ -445,14 +437,12 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-
-        //verifier.add_fact(namespace(namespaceName));
         verifier.set_time();
 
         Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
         if (operationName.isPresent()) {
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_fact(fact("ns_operation", Arrays.asList(s("ambient"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
+            verifier.add_fact(fact("ns_operation", Arrays.asList(s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
@@ -492,14 +482,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        verifier.add_fact(namespace(namespaceName));
         verifier.set_time();
 
         Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
 
         if (policyName.isPresent()) {
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact(fact("ns_operation", Arrays.asList(s("ambient"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("policy_" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+            verifier.add_fact(fact("ns_operation", Arrays.asList(s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("policy_" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
@@ -545,10 +534,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         new IllegalStateException("TopicOperation is not supported."));
         }
 
-        CompletableFuture<Boolean> isSuperUserFuture = isSuperUser(role, conf);
-
-        return isSuperUserFuture
-                .thenCombine(isAuthorizedFuture, (isSuperUser, isAuthorized) -> isSuperUser || isAuthorized);
+        return isAuthorizedFuture.thenCompose(isAuthorized -> {
+            if (isAuthorized) {
+                return CompletableFuture.completedFuture(true);
+            } else {
+                return isSuperUser(role, conf);
+            }
+        });
     }
 
     // those management functions will be performed outside of the authorization provider

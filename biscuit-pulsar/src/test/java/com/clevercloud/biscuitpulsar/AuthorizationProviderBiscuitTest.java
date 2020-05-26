@@ -30,8 +30,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.clevercloud.biscuit.crypto.TokenSignature.hex;
 import static com.clevercloud.biscuit.token.builder.Utils.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AuthorizationProviderBiscuitTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationProviderBiscuitTest.class);
@@ -62,10 +61,10 @@ public class AuthorizationProviderBiscuitTest {
         authority_builder.add_rule(
                 rule("right",
                         Arrays.asList(s("authority"), s("namespace"), string(tenant), string(namespace), s("create_topic")),
-                        Arrays.asList(pred("namespace", Arrays.asList(s("ambient"), string(tenant), string(namespace))))
+                        Arrays.asList(pred("namespace", Arrays.asList(s("authority"), string(tenant), string(namespace))))
                 )
         );
-        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s(namespace), string(tenant), string(namespace), s("create_topic"))));
+        authority_builder.add_fact(fact("ns_operation", Arrays.asList(s("authority"), s(namespace), string(tenant), string(namespace), s("create_topic"))));
         Biscuit biscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -338,6 +337,7 @@ public class AuthorizationProviderBiscuitTest {
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CLEAR_BACKLOG, null));
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.UNSUBSCRIBE, null));
         assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.ALL, PolicyOperation.READ, null, authedBiscuit, null));
+        assertFalse(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.OFFLOAD, PolicyOperation.WRITE, null, authedBiscuit, null));
         AuthenticationDataSource authData = new AuthenticationDataSource() {
             @Override
             public String getSubscription() {
@@ -377,9 +377,6 @@ public class AuthorizationProviderBiscuitTest {
         ));
 
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
-
-        System.out.println(rootBiscuit.print());
-
         assertNotNull(rootBiscuit);
     }
 
@@ -416,6 +413,7 @@ public class AuthorizationProviderBiscuitTest {
             }
         });
 
+        LOGGER.debug(biscuit.print());
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         CompletableFuture<Boolean> authorizedFuture = authorizationProvider.isSuperUser(authedBiscuit, conf);
         assertTrue(authorizedFuture.get());
