@@ -235,8 +235,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 )
         )));*/
 
-        log.error(verifier.print_world());
-
         Either<Error, Biscuit> deser = Biscuit.from_sealed(
                 Base64.getDecoder().decode(role.substring("biscuit:".length())),
                 AuthenticationProviderBiscuit.BISCUIT_SEALING_KEY.getBytes()
@@ -246,8 +244,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             log.error(e.toString());
         }
 
-        log.debug(deser.get().print());
-
+        log.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("consume verifier failure: {}", verifierResult.getLeft());
