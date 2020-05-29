@@ -81,7 +81,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     public Either<Error, Verifier> verifierFromBiscuit(String role) {
         Either<Error, Biscuit> deser = Biscuit.from_sealed(
                 Base64.getDecoder().decode(role.substring("biscuit:".length())),
-                AuthenticationProviderBiscuit.BISCUIT_SEALING_KEY.getBytes()
+                AuthenticationProviderBiscuit.SEALING_KEY.getBytes()
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();
@@ -241,7 +241,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Biscuit> deser = Biscuit.from_sealed(
                 Base64.getDecoder().decode(role.substring("biscuit:".length())),
-                AuthenticationProviderBiscuit.BISCUIT_SEALING_KEY.getBytes()
+                AuthenticationProviderBiscuit.SEALING_KEY.getBytes()
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();

@@ -69,6 +69,7 @@ public class AuthorizationProviderBiscuitTest {
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
         Properties properties = new Properties();
         properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
         ServiceConfiguration conf = new ServiceConfiguration();
         conf.setProperties(properties);
         provider.initialize(conf);
@@ -116,6 +117,7 @@ public class AuthorizationProviderBiscuitTest {
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
         Properties properties = new Properties();
         properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
         ServiceConfiguration conf = new ServiceConfiguration();
         conf.setProperties(properties);
         provider.initialize(conf);
@@ -300,6 +302,7 @@ public class AuthorizationProviderBiscuitTest {
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
         Properties properties = new Properties();
         properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
         ServiceConfiguration conf = new ServiceConfiguration();
         conf.setProperties(properties);
         provider.initialize(conf);
@@ -463,6 +466,7 @@ public class AuthorizationProviderBiscuitTest {
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
         Properties properties = new Properties();
         properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
         ServiceConfiguration conf = new ServiceConfiguration();
         conf.setProperties(properties);
         provider.initialize(conf);
@@ -502,6 +506,7 @@ public class AuthorizationProviderBiscuitTest {
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
         Properties properties = new Properties();
         properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
         ServiceConfiguration conf = new ServiceConfiguration();
         conf.setProperties(properties);
         provider.initialize(conf);

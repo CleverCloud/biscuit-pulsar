@@ -30,11 +30,11 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
   final static String BISCUIT = "biscuit";
 
-  public static final String BISCUIT_SEALING_KEY = "biscuit-pulsar-key";
-
-  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
+  final static String CONF_BISCUIT_SEALING_KEY = "defaultBiscuitSealingKey";
+  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "defaultBiscuitPublicRootKey";
 
   private PublicKey rootKey;
+  static String SEALING_KEY;
 
   public void close() throws IOException {
     // noop
@@ -43,7 +43,10 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   public void initialize(ServiceConfiguration serviceConfiguration) throws IOException {
     LOGGER.info("Initialize Apache Pulsar Biscuit authentication plugin");
     String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_PUBLIC_ROOT_KEY);
-    LOGGER.info("Got biscuit root public key: {}", key);
+    LOGGER.debug("Got biscuit root public key: {}", key);
+    SEALING_KEY = (String) serviceConfiguration.getProperty(CONF_BISCUIT_SEALING_KEY);
+    LOGGER.debug("Got biscuit sealing key: {}", SEALING_KEY);
+
     try {
       rootKey = new PublicKey(hexStringToByteArray(key));
     } catch (Exception e) {
@@ -105,7 +108,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
         }
         LOGGER.debug("Root key is valid");
 
-        byte[] sealed = realBiscuit.seal(BISCUIT_SEALING_KEY.getBytes()).get();
+        byte[] sealed = realBiscuit.seal(SEALING_KEY.getBytes()).get();
         LOGGER.debug("Biscuit deserialized and sealed");
         return "biscuit:" + Base64.getEncoder().encodeToString(sealed);
       }
