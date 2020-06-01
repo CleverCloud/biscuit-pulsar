@@ -32,6 +32,7 @@
     <junit.version>4.12</junit.version>
     <jackson-annotations.version>2.10.1</jackson-annotations.version>
     <slf4j-api.version>1.7.29</slf4j-api.version>
+    <protobuf.version>3.8.0</protobuf.version>
   </properties>
 
   <licenses>
@@ -78,7 +79,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.8.0</version>
+        <version>${protobuf.version}</version>
       </dependency>
       <dependency>
         <groupId>com.clever-cloud</groupId>
