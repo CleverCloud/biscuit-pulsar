@@ -30,8 +30,8 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
   final static String BISCUIT = "biscuit";
 
-  final static String CONF_BISCUIT_SEALING_KEY = "defaultBiscuitSealingKey";
-  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "defaultBiscuitPublicRootKey";
+  final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
+  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
 
   private PublicKey rootKey;
   static String SEALING_KEY;
