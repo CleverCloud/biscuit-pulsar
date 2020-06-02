@@ -81,7 +81,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     public Either<Error, Verifier> verifierFromBiscuit(String role) {
         Either<Error, Biscuit> deser = Biscuit.from_sealed(
                 Base64.getDecoder().decode(role.substring("biscuit:".length())),
-                AuthenticationProviderBiscuit.BISCUIT_SEALING_KEY.getBytes()
+                AuthenticationProviderBiscuit.SEALING_KEY.getBytes()
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();
@@ -97,7 +97,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
+        /*verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
                 Arrays.asList(pred("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("produce"))))));
 
         verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
@@ -137,7 +137,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         pred("right", Arrays.asList(s("authority"), s("admin"))),
                         pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2))),
                         pred("subscription", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
-                )));
+                )));*/
 
         //*check_right(#authority, #namespace, $0, $1, $2) <- !ns_operation(#authority, #namespace, $0, $1, $2), right(#authority, #namespace, $0, $1, $2) et `*check_right(#authority, #topic, $0, $1, $2, $3) <- !topic_operation(#authority, #topic, $0, $1, $2, $3), right(#authority, #namespace, $0, $1, $2, $3)
 
@@ -169,14 +169,20 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        verifier.set_time();
+        //verifier.set_time();
+
+        verifier.add_fact(fact("topic_operation",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
+        verifier.add_fact(fact("topic",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
-                        Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
+                        Arrays.asList(),
+                        Arrays.asList(pred("right",
+                                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))))
                 ))));
-        verifier.add_fact(fact("topic_operation", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
 
+        log.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("produce verifier failure: {}", verifierResult.getLeft());
@@ -204,18 +210,16 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
+        verifier.add_fact(fact("topic_operation",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
+        verifier.add_fact(fact("topic",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
-                        Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
+                        Arrays.asList(),
+                        Arrays.asList(pred("right",
+                                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))))
                 ))));
-        //verifier.add_fact(namespace(NamespaceName.get(topicName.getTenant(), topicName.getNamespacePortion())));
-        //verifier.add_fact(topic(topicName));
-        //verifier.add_operation("consume");
-
-        verifier.add_fact(fact("topic_operation", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
-        //verifier.add_fact(subscription(topicName, subscription));
-        verifier.set_time();
 
         // add these rules because there are two ways to verify that we can consume: with a right defined on the topic
         // or one defined on the subscription
@@ -237,7 +241,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Biscuit> deser = Biscuit.from_sealed(
                 Base64.getDecoder().decode(role.substring("biscuit:".length())),
-                AuthenticationProviderBiscuit.BISCUIT_SEALING_KEY.getBytes()
+                AuthenticationProviderBiscuit.SEALING_KEY.getBytes()
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();
@@ -273,12 +277,16 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
 
+        verifier.add_fact(fact("topic_operation",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))));
+        verifier.add_fact(fact("topic",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
-                        Arrays.asList(s("ambient"), s("topic"), var(0), var(1), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("topic"), var(0), var(1), var(2), var(3))))
+                        Arrays.asList(),
+                        Arrays.asList(pred("right",
+                                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))))
                 ))));
-        verifier.add_fact(fact("topic_operation", Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))));
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
@@ -348,7 +356,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))
                 ))));
 
-        log.debug(verifier.print_world());
+        //log.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("verifier failure: {}", verifierResult.getLeft());
@@ -426,22 +434,25 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        verifier.set_time();
-        verifier.add_caveat(new Caveat(Arrays.asList(
-                rule("check_right",
-                        Arrays.asList(s("ambient"), s("namespace"), var(0), var(1), var(2)),
-                        Arrays.asList(pred("ns_operation", Arrays.asList(s("namespace"), var(0), var(1), var(2))))
-                ))));
 
         Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
         if (operationName.isPresent()) {
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_fact(fact("ns_operation", Arrays.asList(s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
+            verifier.add_fact(fact("namespace_operation",
+                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
+            verifier.add_fact(fact("namespace",
+                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
+            verifier.add_caveat(new Caveat(Arrays.asList(
+                    rule("check_right",
+                            Arrays.asList(),
+                            Arrays.asList(pred("right",
+                                    Arrays.asList(s("authority"),  string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))))
+                    ))));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
 
-        log.info(verifier.print_world());
+        //log.info(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("verifier failure: {}", verifierResult.getLeft());
@@ -476,23 +487,25 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        verifier.set_time();
-        verifier.add_caveat(new Caveat(Arrays.asList(
-                rule("check_right",
-                        Arrays.asList(s("ambient"), s("namespace"), var(0), var(1), var(2)),
-                        Arrays.asList(pred("ns_operation", Arrays.asList(s("namespace"), var(0), var(1), var(2))))
-                ))));
-
         Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
 
         if (policyName.isPresent()) {
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact(fact("ns_operation", Arrays.asList(s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+            verifier.add_fact(fact("namespace_operation",
+                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+            verifier.add_fact(fact("namespace",
+                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
+            verifier.add_caveat(new Caveat(Arrays.asList(
+                    rule("check_right",
+                            Arrays.asList(),
+                            Arrays.asList(pred("right",
+                                    Arrays.asList(s("authority"),  string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))))
+                    ))));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
 
-        log.info(verifier.print_world());
+        //log.info(verifier.print_world());
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {

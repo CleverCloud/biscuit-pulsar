@@ -23,31 +23,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AuthenticationProviderBiscuit implements AuthenticationProvider {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationProviderBiscuit.class);
+  private static final Logger log = LoggerFactory.getLogger(AuthenticationProviderBiscuit.class);
 
   final static String HTTP_HEADER_NAME = "Authorization";
   final static String HTTP_HEADER_VALUE_PREFIX = "Bearer ";
 
   final static String BISCUIT = "biscuit";
 
-  public static final String BISCUIT_SEALING_KEY = "biscuit-pulsar-key";
-
-  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
+  final static String CONF_BISCUIT_SEALING_KEY = "defaultBiscuitSealingKey";
+  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "defaultBiscuitPublicRootKey";
 
   private PublicKey rootKey;
+  static String SEALING_KEY;
 
   public void close() throws IOException {
     // noop
   }
 
   public void initialize(ServiceConfiguration serviceConfiguration) throws IOException {
-    LOGGER.info("Initialize Apache Pulsar Biscuit authentication plugin");
+    log.info("Initialize Apache Pulsar Biscuit authentication plugin");
     String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_PUBLIC_ROOT_KEY);
-    LOGGER.info("Got biscuit root public key: {}", key);
+    log.debug("Got biscuit root public key: {}", key);
+    SEALING_KEY = (String) serviceConfiguration.getProperty(CONF_BISCUIT_SEALING_KEY);
+    log.debug("Got biscuit sealing key: {}", SEALING_KEY);
+
     try {
       rootKey = new PublicKey(hexStringToByteArray(key));
     } catch (Exception e) {
-      LOGGER.error("Could not decode Biscuit root public key: {}", e);
+      log.error("Could not decode Biscuit root public key: {}", e);
       throw new IOException();
     }
   }
@@ -90,7 +93,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   }
 
   private String parseBiscuit(final String biscuit) throws AuthenticationException {
-    LOGGER.debug("Biscuit to parse: {}", biscuit);
+    log.debug("Biscuit to parse: {}", biscuit);
     try {
       Either<Error, Biscuit> deser = Biscuit.from_b64(biscuit);
 
@@ -98,15 +101,15 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
         throw new AuthenticationException("Could not deserialize biscuit");
       } else {
         Biscuit realBiscuit = deser.get();
-        LOGGER.debug("Deserialized biscuit");
+        log.debug("Deserialized biscuit");
 
         if (realBiscuit.check_root_key(rootKey).isLeft()) {
           throw new AuthenticationException("This biscuit was not generated with the expected root key");
         }
-        LOGGER.debug("Root key is valid");
+        log.debug("Root key is valid");
 
-        byte[] sealed = realBiscuit.seal(BISCUIT_SEALING_KEY.getBytes()).get();
-        LOGGER.debug("Biscuit deserialized and sealed");
+        byte[] sealed = realBiscuit.seal(SEALING_KEY.getBytes()).get();
+        log.debug("Biscuit deserialized and sealed");
         return "biscuit:" + Base64.getEncoder().encodeToString(sealed);
       }
     } catch (IllegalArgumentException e) {
