@@ -228,7 +228,7 @@ public class AuthorizationProviderBiscuitTest {
         block.add_caveat(
                 new Caveat(Arrays.asList(
                         constrained_rule("limited_right",
-                                Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)),
+                                Arrays.asList(string(tenant), string(namespace), var(2)),
                                 Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))),
                                 Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
                                         /*** NamespaceOperation ***/
@@ -287,7 +287,7 @@ public class AuthorizationProviderBiscuitTest {
                                 ))))
                         ),
                         constrained_rule("limited_right",
-                                Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3)),
+                                Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
                                 Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3)))),
                                 Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
                                         "lookup",

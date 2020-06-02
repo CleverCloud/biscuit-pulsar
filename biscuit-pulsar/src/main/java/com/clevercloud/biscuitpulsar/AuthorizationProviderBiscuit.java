@@ -174,7 +174,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_fact(fact("topic_operation",
                 Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
         verifier.add_fact(fact("topic",
-                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
                         Arrays.asList(),
@@ -213,7 +213,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_fact(fact("topic_operation",
                 Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
         verifier.add_fact(fact("topic",
-                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
                         Arrays.asList(),
@@ -280,7 +280,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_fact(fact("topic_operation",
                 Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))));
         verifier.add_fact(fact("topic",
-                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
                         Arrays.asList(),
@@ -441,7 +441,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             verifier.add_fact(fact("namespace_operation",
                     Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
             verifier.add_fact(fact("namespace",
-                    Arrays.asList(s("authority"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
+                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
             verifier.add_caveat(new Caveat(Arrays.asList(
                     rule("check_right",
                             Arrays.asList(),
@@ -494,7 +494,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             verifier.add_fact(fact("namespace_operation",
                     Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
             verifier.add_fact(fact("namespace",
-                    Arrays.asList(s("authority"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
+                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
             verifier.add_caveat(new Caveat(Arrays.asList(
                     rule("check_right",
                             Arrays.asList(),
