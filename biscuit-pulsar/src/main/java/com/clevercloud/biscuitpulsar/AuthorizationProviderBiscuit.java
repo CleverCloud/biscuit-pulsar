@@ -97,7 +97,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        /*verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
+        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
                 Arrays.asList(pred("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("produce"))))));
 
         verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
@@ -137,7 +137,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         pred("right", Arrays.asList(s("authority"), s("admin"))),
                         pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2))),
                         pred("subscription", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
-                )));*/
+                )));
 
         //*check_right(#authority, #namespace, $0, $1, $2) <- !ns_operation(#authority, #namespace, $0, $1, $2), right(#authority, #namespace, $0, $1, $2) et `*check_right(#authority, #topic, $0, $1, $2, $3) <- !topic_operation(#authority, #topic, $0, $1, $2, $3), right(#authority, #namespace, $0, $1, $2, $3)
 
