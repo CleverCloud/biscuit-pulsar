@@ -1,10 +1,12 @@
 # Pulsar Biscuit Authentication & Authorization plugins
 
+[![Bintray Version](https://img.shields.io/bintray/v/clevercloud/maven/biscuit-pulsar.svg)](https://bintray.com/clevercloud/maven/biscuit-pulsar#)
+[![Central Version](https://img.shields.io/maven-central/v/com.clever-cloud/biscuit-pulsar)](https://mvnrepository.com/artifact/com.clever-cloud/biscuit-pulsar)
+[![Nexus Version](https://img.shields.io/nexus/r/com.clever-cloud/biscuit-pulsar?server=https%3A%2F%2Foss.sonatype.org)](https://search.maven.org/artifact/com.clever-cloud/biscuit-pulsar)
+
 ## Status
 
-Still in development.
-
-Missing: https://github.com/apache/pulsar/issues/5720 to manage pulsar's resources. Currently we can only producer/consume.
+We are using 1.1.10 at Clever Cloud, on production, but major changes can still occurs.
 
 ## Build & Tests
 
@@ -22,6 +24,10 @@ mvn clean install -Dmaven.test.skip=true
 mvn clean install -Dtest=AuthorizationProviderBiscuitTest -pl biscuit-pulsar
 ```
 
+## Informations
+
+`biscuit-pulsar` needs protobuf 3.8.0+ as defined in its `pom.xml`.
+
 ## Configuration
 
 The listed dependencies can be necessary to add to the /lib of pulsar folder as jars:
@@ -34,7 +40,30 @@ The listed dependencies can be necessary to add to the /lib of pulsar folder as 
 - biscuit-java
 - curve25519-elisabeth
 
-As we are using Maven, you should find all of them in `~/.m2/...`
+We currently are using this script to put libs on pulsar nodes:
+
+```bash
+#!/bin/bash
+
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/cafe/cryptography/curve25519-elisabeth/0.1.0/curve25519-elisabeth-0.1.0.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.2/vavr-0.10.2.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/0.2.7/biscuit-java-0.2.7.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar"
+```
+
+For nodes configuration:
+
+```bash
+#!/bin/bash
+
+sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" broker.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" proxy.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" standalone.conf
+
+sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" broker.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" proxy.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" standalone.conf
+```
 
 In your `broker.conf`:
 
@@ -51,17 +80,14 @@ authorizationEnabled=true
 # Authorization provider fully qualified class-name
 authorizationProvider=com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit
 
-# Biscuit root signing key
-biscuitPublicRootKey=<BiscuitPublicRootKeyHexa>
-
-superUserRoles=admin
+### --- Biscuit Authentication Provider --- ###
+biscuitPublicRootKey=@@BISCUIT_PUBLIC_ROOT_KEY@@
+biscuitSealingKey=@@BISCUIT_PUBLIC_SEALING_KEY@@
 ```
 
-## Versions
-
-Change version:
+## Publish
 
 ```bash
-mvn versions:set -DnewVersion=x.y.z-SNAPSHOT
-mvn versions:commit
+# Using mavencentral@clever-cloud.com PGP key from Clever Cloud vault do:
+mvn deploy
 ```
