@@ -3,12 +3,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.clevercloud</groupId>
-    <artifactId>biscuit-pulsar-parent</artifactId>
+    <groupId>com.clever-cloud</groupId>
+    <artifactId>biscuit-pulsar</artifactId>
     <version>1.1.6</version>
   </parent>
 
-  <artifactId>biscuit-pulsar</artifactId>
+  <artifactId>biscuit</artifactId>
 
   <dependencies>
     <dependency>
