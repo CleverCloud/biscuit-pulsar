@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.clever-cloud</groupId>
-  <artifactId>biscuit-pulsar</artifactId>
+  <artifactId>biscuit-pulsar-parent</artifactId>
   <packaging>pom</packaging>
   <name>biscuit-pulsar</name>
   <version>1.1.7</version>
@@ -126,15 +126,15 @@
       </build>
       <distributionManagement>
         <repository>
-          <id>bintray-repo-maven-biscuit-java</id>
-          <url>https://api.bintray.com/maven/clevercloud/maven/biscuit-java/;publish=1</url>
+          <id>bintray-repo-maven-biscuit-pulsar</id>
+          <url>https://api.bintray.com/maven/clevercloud/maven/biscuit-pulsar/;publish=1</url>
         </repository>
       </distributionManagement>
     </profile>
   </profiles>
 
   <modules>
-    <module>biscuit</module>
+    <module>biscuit-pulsar</module>
     <module>integration-test</module>
   </modules>
 
@@ -243,9 +243,9 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>biscuit-pulsar-parent</groupId>
-        <artifactId>biscuit-pulsar</artifactId>
-        <version>${project.version}</version>
+        <groupId>com.clever-cloud</groupId>
+        <artifactId>biscuit-pulsar-plugins</artifactId>
+        <version>1.1.8</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -350,6 +350,17 @@
                 <source>${project.build.directory}/generated-sources</source>
               </sources>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.0.0-M1</version>
+        <executions>
+          <execution>
+            <id>default-deploy</id>
+            <phase>none</phase>
           </execution>
         </executions>
       </plugin>

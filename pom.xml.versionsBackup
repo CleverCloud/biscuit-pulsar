@@ -1,0 +1,218 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.clevercloud</groupId>
+  <artifactId>biscuit-pulsar-parent</artifactId>
+  <packaging>pom</packaging>
+  <version>1.1.4</version>
+
+  <name>biscuit-pulsar-parent</name>
+
+  <modules>
+    <module>biscuit-pulsar</module>
+    <module>integration-test</module>
+  </modules>
+
+  <properties>
+    <java.version>1.8</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+
+    <logback-classic.version>1.2.3</logback-classic.version>
+    <biscuit-java.version>0.2.7</biscuit-java.version>
+    <pulsar-broker.version>2.6.0-SNAPSHOT</pulsar-broker.version>
+    <grpc.version>1.18.0</grpc.version>
+    <vavr.version>0.10.2</vavr.version>
+
+    <hadoop-unit.version>3.7</hadoop-unit.version>
+
+    <assertj-core.version>3.14.0</assertj-core.version>
+    <junit.version>4.12</junit.version>
+    <jackson-annotations.version>2.10.1</jackson-annotations.version>
+    <slf4j-api.version>1.7.29</slf4j-api.version>
+    <protobuf.version>3.8.0</protobuf.version>
+  </properties>
+
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Alexandre DUVAL</name>
+      <email>alexandre.duval@clever-cloud.com</email>
+      <organization>Clever Cloud</organization>
+      <organizationUrl>https://clever-cloud.com</organizationUrl>
+    </developer>
+    <developer>
+      <name>Geoffroy COUPRIE</name>
+      <email>geoffroy.couprie@clever-cloud.com</email>
+      <organization>Clever Cloud</organization>
+      <organizationUrl>https://clever-cloud.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://git@github.com/clevercloud/biscuit-pulsar.git</connection>
+    <developerConnection>scm:git:git@github.com:clevercloud/biscuit-pulsar.git</developerConnection>
+    <url>git@github.com:clevercloud/biscuit-pulsar.git</url>
+  </scm>
+
+  <repositories>
+    <repository>
+      <id>oss-sonatype</id>
+      <name>oss-sonatype</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.clever-cloud</groupId>
+        <artifactId>biscuit-java</artifactId>
+        <version>${biscuit-java.version}</version>
+        <type>jar</type>
+      </dependency>
+      <dependency>
+        <groupId>com.clevercloud</groupId>
+        <artifactId>biscuit-pulsar</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.vavr</groupId>
+        <artifactId>vavr</artifactId>
+        <version>${vavr.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.pulsar</groupId>
+        <artifactId>pulsar-broker-common</artifactId>
+        <version>${pulsar-broker.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pulsar</groupId>
+        <artifactId>pulsar-broker</artifactId>
+        <version>${pulsar-broker.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-all</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-all</artifactId>
+        <version>${grpc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pulsar</groupId>
+        <artifactId>pulsar-client</artifactId>
+        <version>${pulsar-broker.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback-classic.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson-annotations.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>fr.jetoile.hadoop</groupId>
+        <artifactId>hadoop-unit-commons</artifactId>
+        <version>${hadoop-unit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>${assertj-core.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>biscuit-pulsar-parent</groupId>
+        <artifactId>biscuit-pulsar</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-all</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

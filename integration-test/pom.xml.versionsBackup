@@ -3,9 +3,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.clever-cloud</groupId>
+    <groupId>com.clevercloud</groupId>
     <artifactId>biscuit-pulsar-parent</artifactId>
-    <version>1.1.7</version>
+    <version>1.1.4</version>
   </parent>
 
   <artifactId>integration-test</artifactId>
@@ -16,8 +16,8 @@
       <artifactId>biscuit-java</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.clever-cloud</groupId>
-      <artifactId>biscuit-pulsar-plugins</artifactId>
+      <groupId>com.clevercloud</groupId>
+      <artifactId>biscuit-pulsar</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -115,7 +115,7 @@
               <version>${hadoop-unit.version}</version>
               <mainClass>fr.jetoile.hadoopunit.component.PulsarBootstrap</mainClass>
               <properties>
-                <pulsar.extraClasspath>com.clevercloud:biscuit-pulsar-plugins:1.1.7</pulsar.extraClasspath>
+                <pulsar.extraClasspath>com.clevercloud:biscuit-pulsar:1.1.0</pulsar.extraClasspath>
                 <pulsar.authentication.enabled>true</pulsar.authentication.enabled>
                 <pulsar.authentication.provider>com.clevercloud.biscuitpulsar.AuthenticationProviderBiscuit</pulsar.authentication.provider>
                 <pulsar.authorization.enabled>true</pulsar.authorization.enabled>
