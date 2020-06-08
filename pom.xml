@@ -4,7 +4,7 @@
 
   <groupId>com.clever-cloud</groupId>
   <artifactId>biscuit-pulsar-parent</artifactId>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
   <name>biscuit-pulsar</name>
   <version>1.1.8</version>
   <url>https://github.com/clevercloud/biscuit-pulsar</url>
