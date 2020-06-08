@@ -6,7 +6,7 @@
   <artifactId>biscuit-pulsar-parent</artifactId>
   <packaging>pom</packaging>
   <name>biscuit-pulsar</name>
-  <version>1.1.9</version>
+  <version>1.1.10</version>
   <url>https://github.com/clevercloud/biscuit-pulsar</url>
 
   <description>Biscuit authentication/authorization plugins for Apache Pulsar</description>
