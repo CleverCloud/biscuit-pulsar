@@ -2,38 +2,14 @@
      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.clevercloud</groupId>
-  <artifactId>biscuit-pulsar-parent</artifactId>
+  <groupId>com.clever-cloud</groupId>
+  <artifactId>biscuit-pulsar</artifactId>
   <packaging>pom</packaging>
-  <version>1.1.6</version>
+  <name>biscuit-pulsar</name>
+  <version>1.1.7</version>
+  <url>https://github.com/clevercloud/biscuit-pulsar</url>
 
-  <name>biscuit-pulsar-parent</name>
-
-  <modules>
-    <module>biscuit-pulsar</module>
-    <module>integration-test</module>
-  </modules>
-
-  <properties>
-    <java.version>1.8</java.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.source>1.8</maven.compiler.source>
-
-    <logback-classic.version>1.2.3</logback-classic.version>
-    <biscuit-java.version>0.2.7</biscuit-java.version>
-    <pulsar-broker.version>2.6.0-SNAPSHOT</pulsar-broker.version>
-    <grpc.version>1.18.0</grpc.version>
-    <vavr.version>0.10.2</vavr.version>
-
-    <hadoop-unit.version>3.7</hadoop-unit.version>
-
-    <assertj-core.version>3.14.0</assertj-core.version>
-    <junit.version>4.12</junit.version>
-    <jackson-annotations.version>2.10.1</jackson-annotations.version>
-    <slf4j-api.version>1.7.29</slf4j-api.version>
-    <protobuf.version>3.8.0</protobuf.version>
-  </properties>
+  <description>Biscuit authentication/authorization plugins for Apache Pulsar</description>
 
   <licenses>
     <license>
@@ -62,6 +38,105 @@
     <developerConnection>scm:git:git@github.com:clevercloud/biscuit-pulsar.git</developerConnection>
     <url>git@github.com:clevercloud/biscuit-pulsar.git</url>
   </scm>
+
+  <properties>
+    <java.version>1.8</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+
+    <logback-classic.version>1.2.3</logback-classic.version>
+    <biscuit-java.version>0.2.7</biscuit-java.version>
+    <pulsar-broker.version>2.6.0-SNAPSHOT</pulsar-broker.version>
+    <grpc.version>1.18.0</grpc.version>
+    <vavr.version>0.10.2</vavr.version>
+
+    <hadoop-unit.version>3.7</hadoop-unit.version>
+
+    <assertj-core.version>3.14.0</assertj-core.version>
+    <junit.version>4.12</junit.version>
+    <jackson-annotations.version>2.10.1</jackson-annotations.version>
+    <slf4j-api.version>1.7.29</slf4j-api.version>
+    <protobuf.version>3.8.0</protobuf.version>
+  </properties>
+
+  <profiles>
+    <profile>
+      <id>deploy</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.3</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>bintray</id>
+      <activation>
+        <property>
+          <name>!useTestRepo</name>
+        </property>
+      </activation>
+      <properties>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <keyname>mavencentral@clever-cloud.com</keyname>
+                  <passphraseServerId>mavencentral@clever-cloud.com</passphraseServerId>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <distributionManagement>
+        <repository>
+          <id>bintray-repo-maven-biscuit-java</id>
+          <url>https://api.bintray.com/maven/clevercloud/maven/biscuit-java/;publish=1</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+  </profiles>
+
+  <modules>
+    <module>biscuit</module>
+    <module>integration-test</module>
+  </modules>
 
   <repositories>
     <repository>
@@ -204,14 +279,79 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.6</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.2.1</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.9.1</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.0</version>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
+          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>add-classes</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
