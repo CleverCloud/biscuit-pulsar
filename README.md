@@ -53,19 +53,7 @@ wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobu
 
 For nodes configuration:
 
-```bash
-#!/bin/bash
-
-sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" broker.conf
-sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" proxy.conf
-sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" standalone.conf
-
-sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" broker.conf
-sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" proxy.conf
-sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" standalone.conf
-```
-
-In your `broker.conf`:
+In your `broker.conf` | `proxy.conf` | `standalone.conf`:
 
 ```bash
 # Enable authentication
@@ -83,6 +71,18 @@ authorizationProvider=com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit
 ### --- Biscuit Authentication Provider --- ###
 biscuitPublicRootKey=@@BISCUIT_PUBLIC_ROOT_KEY@@
 biscuitSealingKey=@@BISCUIT_PUBLIC_SEALING_KEY@@
+```
+
+```bash
+#!/bin/bash
+
+sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" broker.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" proxy.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" standalone.conf
+
+sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" broker.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" proxy.conf
+sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" standalone.conf
 ```
 
 ## Publish
