@@ -3,10 +3,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.clever-cloud</groupId>
-  <artifactId>biscuit-pulsar</artifactId>
+  <artifactId>biscuit-pulsar-parent</artifactId>
   <packaging>pom</packaging>
   <name>biscuit-pulsar</name>
-  <version>1.1.11</version>
+  <version>1.1.13</version>
   <url>https://github.com/clevercloud/biscuit-pulsar</url>
 
   <description>Biscuit authentication/authorization plugins for Apache Pulsar</description>
@@ -134,7 +134,7 @@
   </profiles>
 
   <modules>
-    <module>biscuit-pulsar-plugins</module>
+    <module>biscuit-pulsar</module>
     <module>integration-test</module>
   </modules>
 
@@ -163,7 +163,7 @@
         <type>jar</type>
       </dependency>
       <dependency>
-        <groupId>com.clevercloud</groupId>
+        <groupId>com.clever-cloud</groupId>
         <artifactId>biscuit-pulsar</artifactId>
         <version>${project.version}</version>
         <scope>test</scope>
@@ -240,12 +240,6 @@
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
         <version>${assertj-core.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.clever-cloud</groupId>
-        <artifactId>biscuit-pulsar-plugins</artifactId>
-        <version>1.1.8</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -360,7 +354,7 @@
         <executions>
           <execution>
             <id>default-deploy</id>
-            <phase>none</phase>
+            <phase>deploy</phase>
           </execution>
         </executions>
       </plugin>
