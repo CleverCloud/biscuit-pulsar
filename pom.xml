@@ -3,10 +3,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.clever-cloud</groupId>
-  <artifactId>biscuit-pulsar-parent</artifactId>
+  <artifactId>biscuit-pulsar</artifactId>
   <packaging>pom</packaging>
   <name>biscuit-pulsar</name>
-  <version>1.1.10</version>
+  <version>1.1.11</version>
   <url>https://github.com/clevercloud/biscuit-pulsar</url>
 
   <description>Biscuit authentication/authorization plugins for Apache Pulsar</description>
@@ -134,7 +134,7 @@
   </profiles>
 
   <modules>
-    <module>biscuit-pulsar</module>
+    <module>biscuit-pulsar-plugins</module>
     <module>integration-test</module>
   </modules>
 
