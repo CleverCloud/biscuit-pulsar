@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -169,7 +170,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
-        //verifier.set_time();
+        verifier.add_rule(constrained_rule("right",
+                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))),
+                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
+                        "produce"
+                ))))
+        ));
 
         verifier.add_fact(fact("topic_operation",
                 Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
@@ -210,6 +217,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
+        verifier.add_rule(constrained_rule("right",
+                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))),
+                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
+                        "consume"
+                ))))
+        ));
         verifier.add_fact(fact("topic_operation",
                 Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
         verifier.add_fact(fact("topic",
@@ -276,6 +290,14 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Verifier verifier = res.get();
+
+        verifier.add_rule(constrained_rule("right",
+                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))),
+                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
+                        "lookup"
+                ))))
+        ));
 
         verifier.add_fact(fact("topic_operation",
                 Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))));
@@ -438,8 +460,27 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
         if (operationName.isPresent()) {
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
+            verifier.add_rule(constrained_rule("right",
+                    Arrays.asList(s("authority"), var(0), var(1), var(2)),
+                    Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))),
+                    Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
+                            "create_topic",
+                            "get_topic",
+                            "get_topics",
+                            "delete_topic",
+                            "add_bundle",
+                            "delete_bundle",
+                            "get_bundle",
+                            "get_permission",
+                            "grant_permission",
+                            "revoke_permission",
+                            "clear_backlog",
+                            "unsubscribe"
+                    ))))
+            ));
             verifier.add_fact(fact("namespace_operation",
                     Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
+
             verifier.add_fact(fact("namespace",
                     Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
             verifier.add_caveat(new Caveat(Arrays.asList(
@@ -452,7 +493,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
 
-        //log.info(verifier.print_world());
+        log.info(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("verifier failure: {}", verifierResult.getLeft());
@@ -491,6 +532,50 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (policyName.isPresent()) {
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
+            verifier.add_rule(constrained_rule("right",
+                    Arrays.asList(s("authority"), var(0), var(1), var(2)),
+                    Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))),
+                    Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
+                            "all_read",
+                            "all_write",
+                            "anty_affinity_write",
+                            "anty_affinity_read",
+                            "backlog_read",
+                            "backlog_write",
+                            "compaction_read",
+                            "compaction_write",
+                            "delayed_delivery_read",
+                            "delayed_delivery_write",
+                            "deduplication_read",
+                            "deduplication_write",
+                            "max_consumers_read",
+                            "max_consumers_write",
+                            "max_producers_read",
+                            "max_producers_write",
+                            "max_unacked_read",
+                            "max_unacked_write",
+                            "offload_read",
+                            "offload_write",
+                            "persistence_read",
+                            "persistence_write",
+                            "rate_write",
+                            "rate_read",
+                            "retention_read",
+                            "retention_write",
+                            "replication_read",
+                            "replication_write",
+                            "replication_rate_read",
+                            "replication_rate_write",
+                            "schema_compatibility_strategy_read",
+                            "schema_compatibility_strategy_write",
+                            "subscription_auth_mode_read",
+                            "subscription_auth_mode_write",
+                            "encryption_read",
+                            "encryption_write",
+                            "ttl_read",
+                            "ttl_write"
+                    ))))
+            ));
             verifier.add_fact(fact("namespace_operation",
                     Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
             verifier.add_fact(fact("namespace",
