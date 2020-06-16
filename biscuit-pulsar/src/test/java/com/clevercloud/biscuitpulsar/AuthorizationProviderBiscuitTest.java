@@ -35,19 +35,6 @@ import static org.junit.Assert.*;
 public class AuthorizationProviderBiscuitTest {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProviderBiscuitTest.class);
 
-    private com.clevercloud.biscuit.token.builder.Fact topic(TopicName topicName) {
-        return fact("topic", Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())));
-    }
-
-    private com.clevercloud.biscuit.token.builder.Fact subscription(TopicName topicName, String subscription) {
-        return fact("subscription", Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), string(subscription)));
-    }
-
-    private com.clevercloud.biscuit.token.builder.Predicate topicRight(TopicName topicName, String right) {
-        return pred("right", Arrays.asList(s("authority"), s("topic"),
-                string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(right)));
-    }
-
     @Test
     public void testTopicCreation() throws Exception {
         SecureRandom rng = new SecureRandom();
@@ -58,12 +45,9 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
 
         Block authority_builder = new Block(0, symbols);
-        authority_builder.add_rule(
-                rule("right",
-                        Arrays.asList(s("authority"), string(tenant), string(namespace), s("create_topic")),
-                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), s("create_topic"))))
-                )
-        );
+        authority_builder.add_rule(rule("right",
+            Arrays.asList(s("authority"), string(tenant), string(namespace), s("create_topic")),
+            Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), s("create_topic"))))));
         Biscuit biscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -100,12 +84,9 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
 
         Block authority_builder = new Block(0, symbols);
-        authority_builder.add_rule(
-                rule("right",
-                        Arrays.asList(s("authority"), string(tenant), string(namespace), s("create_topic")),
-                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), s("create_topic"))))
-                )
-        );
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), string(tenant), string(namespace), s("create_topic")),
+                Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), s("create_topic"))))));
         authority_builder.add_rule(rule("right",
                 Arrays.asList(s("authority"), string(tenant), string(namespace), var(2), s("produce")),
                 Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("produce"))))));
@@ -143,7 +124,7 @@ public class AuthorizationProviderBiscuitTest {
     }
 
     @Test
-    public void testNamespaceOwnerWithPolicies() throws Exception {
+    public void testNsLimitations() throws Exception {
         SecureRandom rng = new SecureRandom();
         KeyPair root = new KeyPair(rng);
         SymbolTable symbols = Biscuit.default_symbol_table();
@@ -157,78 +138,14 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(
-                new Caveat(Arrays.asList(
-                        constrained_rule("limited_right",
-                                Arrays.asList(string(tenant), string(namespace), var(2)),
-                                Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))),
-                                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
-                                        /*** NamespaceOperation ***/
-                                        "create_topic",
-                                        "get_topic",
-                                        "get_topics",
-                                        "delete_topic",
-                                        "add_bundle",
-                                        "delete_bundle",
-                                        "get_bundle",
-                                        //"get_permission",
-                                        //"grant_permission",
-                                        //"revoke_permission",
-                                        "clear_backlog",
-                                        "unsubscribe",
-
-                                        /*** PolicyName ***/
-                                        "all_read",
-                                        //"all_write",
-                                        "anty_affinity_read",
-                                        //"anty_affinity_write",
-                                        "backlog_read",
-                                        "backlog_write",
-                                        "compaction_read",
-                                        "compaction_write",
-                                        "delayed_delivery_read",
-                                        "delayed_delivery_write",
-                                        "deduplication_read",
-                                        "deduplication_write",
-                                        "max_consumers_read",
-                                        "max_consumers_write",
-                                        "max_producers_read",
-                                        "max_producers_write",
-                                        "max_unacked_read",
-                                        "max_unacked_write",
-                                        "offload_read",
-                                        "offload_write",
-                                        "persistence_read",
-                                        "persistence_write",
-                                        "rate_write",
-                                        "rate_read",
-                                        "retention_read",
-                                        "retention_write",
-                                        "replication_read",
-                                        //"replication_write",
-                                        "replication_rate_read",
-                                        //"replication_rate_write",
-                                        "schema_compatibility_strategy_read",
-                                        "schema_compatibility_strategy_write",
-                                        //"subscription_auth_mode_read",
-                                        //"subscription_auth_mode_write",
-                                        "encryption_read",
-                                        "encryption_write",
-                                        "ttl_read",
-                                        "ttl_write"
-                                ))))
-                        ),
-                        constrained_rule("limited_right",
-                                Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3)))),
-                                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
-                                        "lookup",
-                                        "consume",
-                                        "produce"
-                                ))))
-                        )
-                ))
-        );
+        block.add_caveat(new Caveat(Arrays.asList(
+            rule("limited_right",
+                    Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
+                    Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3))))),
+            rule("limited_right",
+                    Arrays.asList(string(tenant), string(namespace), var(2)),
+                    Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))))
+        )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -253,6 +170,7 @@ public class AuthorizationProviderBiscuitTest {
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
 
         log.debug(biscuit.print());
+
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.GET_TOPIC, null));
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.GET_TOPICS, null));
@@ -266,7 +184,7 @@ public class AuthorizationProviderBiscuitTest {
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), null, authedBiscuit, NamespaceOperation.UNSUBSCRIBE, null));
         assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.ALL, PolicyOperation.READ, null, authedBiscuit, null));
         assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.TTL, PolicyOperation.READ, null, authedBiscuit, null));
-        assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.OFFLOAD, PolicyOperation.WRITE, null, authedBiscuit, null));
+        assertFalse(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.OFFLOAD, PolicyOperation.WRITE, null, authedBiscuit, null));
         assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.SCHEMA_COMPATIBILITY_STRATEGY, PolicyOperation.WRITE, null, authedBiscuit, null));
         assertFalse(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.REPLICATION, PolicyOperation.WRITE, null, authedBiscuit, null));
         assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get(tenant + "/" + namespace), PolicyName.REPLICATION, PolicyOperation.READ, null, authedBiscuit, null));
@@ -284,6 +202,7 @@ public class AuthorizationProviderBiscuitTest {
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test"), null, authedBiscuit, TopicOperation.PRODUCE, null));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test123"), null, authedBiscuit, TopicOperation.CONSUME, authData));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test123"), null, authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.isSuperUser(authedBiscuit, conf).get());
     }
 
     @Test
