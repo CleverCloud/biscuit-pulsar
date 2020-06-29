@@ -180,7 +180,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.add_rule(constrained_rule("right",
                 Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))),
+                Arrays.asList(
+                        pred("right", Arrays.asList(s("authority"), s("admin"))),
+                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
+                ),
                 Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
                         "produce"
                 ))))
@@ -189,11 +192,14 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
                         Arrays.asList(),
-                        Arrays.asList(pred("right",
-                                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))))
-                ))));
+                        Arrays.asList(
+                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce")))
+                        )
+                )
+        )));
 
         log.debug(verifier.print_world());
+
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("produce verifier failure: {}", verifierResult.getLeft());
@@ -230,7 +236,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.add_rule(constrained_rule("right",
                 Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))),
+                Arrays.asList(
+                        pred("right", Arrays.asList(s("authority"), s("admin"))),
+                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
+                ),
                 Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
                         "consume"
                 ))))
@@ -239,9 +248,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
                         Arrays.asList(),
-                        Arrays.asList(pred("right",
-                                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))))
-                ))));
+                        Arrays.asList(
+                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume")))
+                        )
+                )
+        )));
 
         // add these rules because there are two ways to verify that we can consume: with a right defined on the topic
         // or one defined on the subscription
@@ -308,7 +319,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         // topic_operation $3 must be lookup
         verifier.add_rule(constrained_rule("right",
                 Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))),
+                Arrays.asList(
+                        pred("right", Arrays.asList(s("authority"), s("admin"))),
+                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
+                ),
                 Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
                         "lookup"
                 ))))
@@ -317,9 +331,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_caveat(new Caveat(Arrays.asList(
                 rule("check_right",
                         Arrays.asList(),
-                        Arrays.asList(pred("right",
-                                Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))))
-                ))));
+                        Arrays.asList(
+                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup")))
+                        )
+                )
+        )));
+
+        log.debug(verifier.print_world());
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
@@ -386,10 +404,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_caveat(caveat(rule(
                 "checked_issuperuser_right",
                 Arrays.asList(s("admin")),
-                Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))
-                ))));
+                Arrays.asList(
+                        pred("right", Arrays.asList(s("authority"), s("admin")))
+                )
+        )));
 
-        //log.debug(verifier.print_world());
+        log.debug(verifier.print_world());
+
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
             log.error("verifier failure: {}", verifierResult.getLeft());
@@ -479,7 +500,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
             verifier.add_rule(constrained_rule("right",
                     Arrays.asList(s("authority"), var(0), var(1), var(2)),
-                    Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))),
+                    Arrays.asList(
+                            pred("right", Arrays.asList(s("authority"), s("admin"))),
+                            pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))
+                    ),
                     Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
                             "create_topic",
                             "get_topic",
@@ -498,11 +522,12 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
             verifier.add_caveat(new Caveat(Arrays.asList(
-                    rule("check_right",
-                            Arrays.asList(),
-                            Arrays.asList(pred("right",
-                                    Arrays.asList(s("authority"),  string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))))
-                    ))));
+                    rule("check_right", Arrays.asList(),
+                            Arrays.asList(
+                                    pred("right", Arrays.asList(s("authority"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase())))
+                            )
+                    )
+            )));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }
@@ -604,9 +629,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             verifier.add_caveat(new Caveat(Arrays.asList(
                     rule("check_right",
                             Arrays.asList(),
-                            Arrays.asList(pred("right",
-                                    Arrays.asList(s("authority"),  string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))))
-                    ))));
+                            Arrays.asList(
+                                    pred("right", Arrays.asList(s("authority"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase())))
+                            )
+                    )
+            )));
         } else {
             throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
         }

@@ -265,9 +265,9 @@ public class AuthorizationProviderBiscuitTest {
         });
 
         log.debug(biscuit.print());
+
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        CompletableFuture<Boolean> authorizedFuture = authorizationProvider.isSuperUser(authedBiscuit, conf);
-        assertTrue(authorizedFuture.get());
+        assertTrue(authorizationProvider.isSuperUser(authedBiscuit, conf).get());
     }
 
     @Test
