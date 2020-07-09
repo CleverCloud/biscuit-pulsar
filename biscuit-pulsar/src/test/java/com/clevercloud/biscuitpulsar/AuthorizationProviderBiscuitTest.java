@@ -5,6 +5,7 @@ import com.clevercloud.biscuit.datalog.SymbolTable;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.builder.Block;
 import com.clevercloud.biscuit.token.builder.Caveat;
+import com.clevercloud.biscuit.token.builder.constraints.StrConstraint;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.naming.NamespaceName;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
@@ -308,5 +310,69 @@ public class AuthorizationProviderBiscuitTest {
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         CompletableFuture<Boolean> authorizedFuture = authorizationProvider.isSuperUser(authedBiscuit, conf);
         assertTrue(authorizedFuture.get());
+    }
+
+    @Test
+    public void testNsLimitationsThenPrefixLimitation() throws IOException, AuthenticationException, ExecutionException, InterruptedException {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+
+        // root token
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("revocation_id", Arrays.asList(date(Date.from(Instant.now())))));
+        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        // limit on ns tenant/namespace
+        Block block = rootBiscuit.create_block();
+        block.add_caveat(new Caveat(Arrays.asList(
+                rule("limited_right",
+                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3))))),
+                rule("limited_right",
+                        Arrays.asList(string(tenant), string(namespace), var(2)),
+                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))))
+        )));
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
+
+        // limit on tenant/namespace/PREFIX*
+        String PREFIX = "INSTANCE_PREFIX_TO_DEFINE";
+        Block attenuated = biscuit.create_block();
+        attenuated.add_caveat(caveat(constrained_rule("limited_topic",
+                Arrays.asList(),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3)))),
+                Arrays.asList(new StrConstraint.Prefix(2, PREFIX))
+        )));
+        biscuit = biscuit.attenuate(rng, root, attenuated.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        Biscuit finalBiscuit = biscuit;
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+            @Override
+            public String getCommandData() {
+                return finalBiscuit.serialize_b64().get();
+            }
+        });
+
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+
+        log.debug(biscuit.print());
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/test"), null, authedBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX), null, authedBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX + "-concat"), null, authedBiscuit, TopicOperation.PRODUCE, null));
     }
 }
