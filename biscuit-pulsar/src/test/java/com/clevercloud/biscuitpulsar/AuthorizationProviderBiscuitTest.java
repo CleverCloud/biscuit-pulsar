@@ -343,7 +343,7 @@ public class AuthorizationProviderBiscuitTest {
         String PREFIX = "INSTANCE_PREFIX_TO_DEFINE";
         Block attenuated = biscuit.create_block();
         attenuated.add_caveat(caveat(constrained_rule("limited_topic",
-                Arrays.asList(),
+                Arrays.asList(string(tenant), string(namespace), var(2)),
                 Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3)))),
                 Arrays.asList(new StrConstraint.Prefix(2, PREFIX))
         )));
