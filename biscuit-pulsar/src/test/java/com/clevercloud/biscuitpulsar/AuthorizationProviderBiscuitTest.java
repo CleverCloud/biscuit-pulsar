@@ -126,6 +126,57 @@ public class AuthorizationProviderBiscuitTest {
     }
 
     @Test
+    public void testTopicOperation() throws IOException, AuthenticationException, ExecutionException, InterruptedException {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("revocation_id", Arrays.asList(date(Date.from(Instant.now())))));
+        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        Block block = rootBiscuit.create_block();
+        block.add_caveat(new Caveat(Arrays.asList(
+                rule("limited_right",
+                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3))))),
+                rule("limited_right",
+                        Arrays.asList(string(tenant), string(namespace), var(2)),
+                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))))
+        )));
+
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+
+            @Override
+            public String getCommandData() {
+                return biscuit.serialize_b64().get();
+            }
+        });
+
+        log.debug(biscuit.print());
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), null, authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), null, authedBiscuit, TopicOperation.CONSUME, null).get());
+    }
+
+    @Test
     public void testNsLimitations() throws Exception {
         SecureRandom rng = new SecureRandom();
         KeyPair root = new KeyPair(rng);
