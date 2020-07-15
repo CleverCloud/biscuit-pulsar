@@ -662,24 +662,66 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     public CompletableFuture<Boolean> allowTopicOperationAsync(TopicName topicName, String originalRole, String role,
                                                                TopicOperation operation,
                                                                AuthenticationDataSource authData) {
-        CompletableFuture<Boolean> isAuthorizedFuture;
+        CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
 
-        switch (operation) {
-            case LOOKUP:
-                isAuthorizedFuture = canLookupAsync(topicName, role, authData);
-                break;
-            case PRODUCE:
-                isAuthorizedFuture = canProduceAsync(topicName, role, authData);
-                break;
-            case CONSUME:
-                isAuthorizedFuture = canConsumeAsync(topicName, role, authData, authData.getSubscription());
-                break;
-            default:
-                isAuthorizedFuture = FutureUtil.failedFuture(
-                        new IllegalStateException("TopicOperation is not supported."));
+        Either<Error, Verifier> res = verifierFromBiscuit(role);
+        if (res.isLeft()) {
+            permissionFuture.complete(false);
+            return permissionFuture;
         }
 
-        return isAuthorizedFuture.thenCompose(isAuthorized -> {
+        Verifier verifier = res.get();
+
+        verifier.add_fact(fact("topic",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
+
+        verifier.add_fact(fact("topic_operation",
+                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(operation.toString().toLowerCase()))));
+
+        // topic_operation $3 must be lookup
+        verifier.add_rule(constrained_rule("right",
+                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
+                Arrays.asList(
+                        pred("right", Arrays.asList(s("authority"), s("admin"))),
+                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
+                ),
+                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
+                        "lookup",
+                        "produce",
+                        "consume",
+                        "compact",
+                        "expire_messages",
+                        "offload",
+                        "peek_messages",
+                        "reset_cursor",
+                        "skip",
+                        "terminate",
+                        //"unload",
+                        //"grant_permission",
+                        //"get_permission",
+                        //"revoke_permission",
+                        //"add_bundle_range",
+                        //"get_bundle_range",
+                        //"delete_bundle_range",
+                        "subscribe",
+                        "get_subscriptions",
+                        "unsubscribe",
+                        "get_stats",
+                        "skip_messages"
+                ))))
+        ));
+
+        log.debug(verifier.print_world());
+
+        Either verifierResult = verifier.verify();
+        if (verifierResult.isLeft()) {
+            log.error("verifier failure: {}", verifierResult.getLeft());
+        } else {
+            log.debug(String.format("allowTopicOperationAsync [%s] on [%s] authorized.", operation.toString(), topicName.toString()));
+        }
+        permissionFuture.complete(verifierResult.isRight());
+
+        return permissionFuture.thenCompose(isAuthorized -> {
             if (isAuthorized) {
                 return CompletableFuture.completedFuture(true);
             } else {
