@@ -272,15 +272,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 )
         )));*/
 
-        Either<Error, Biscuit> deser = Biscuit.from_sealed(
-                Base64.getDecoder().decode(role.substring("biscuit:".length())),
-                AuthenticationProviderBiscuit.SEALING_KEY.getBytes()
-        );
-        if (deser.isLeft()) {
-            Error e = deser.getLeft();
-            log.error(e.toString());
-        }
-
         log.debug(verifier.print_world());
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
