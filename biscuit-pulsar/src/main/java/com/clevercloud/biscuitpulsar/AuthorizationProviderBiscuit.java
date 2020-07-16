@@ -520,7 +520,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                     )
             )));
         } else {
-            throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
+            return isSuperUser(role, conf);
         }
 
         log.info(verifier.print_world());
@@ -626,9 +626,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                     )
             )));
         } else {
-            throw new IllegalStateException(String.format("allowNamespacePolicyOperationAsync [%s] is not implemented.", operation.toString()));
+            return isSuperUser(role, conf);
         }
-
         log.info(verifier.print_world());
 
         Either verifierResult = verifier.verify();
