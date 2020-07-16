@@ -110,7 +110,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
         byte[] sealed = realBiscuit.seal(SEALING_KEY.getBytes()).get();
         log.debug("Biscuit deserialized and sealed");
-        return "biscuit:" + Base64.getEncoder().encodeToString(sealed);
+        return "biscuit:" + Base64.getUrlEncoder().encodeToString(sealed);
       }
     } catch (IllegalArgumentException e) {
       throw new AuthenticationException(e.getMessage());
