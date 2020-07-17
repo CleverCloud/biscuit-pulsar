@@ -652,6 +652,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     public CompletableFuture<Boolean> allowTopicOperationAsync(TopicName topicName, String originalRole, String role,
                                                                TopicOperation operation,
                                                                AuthenticationDataSource authData) {
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowTopicOperationAsync(topicName, originalRole, role, operation, authData);
+        }
+
         CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
