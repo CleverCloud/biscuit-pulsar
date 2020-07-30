@@ -700,8 +700,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                         "subscribe",
                         "get_subscriptions",
                         "unsubscribe",
-                        "get_stats",
-                        "skip_messages"
+                        "get_stats"
                 ))))
         ));
 
