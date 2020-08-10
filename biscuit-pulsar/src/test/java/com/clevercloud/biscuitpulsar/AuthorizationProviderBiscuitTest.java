@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -425,5 +426,60 @@ public class AuthorizationProviderBiscuitTest {
         assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/test"), null, authedBiscuit, TopicOperation.PRODUCE, null));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX), null, authedBiscuit, TopicOperation.PRODUCE, null));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX + "-concat"), null, authedBiscuit, TopicOperation.PRODUCE, null));
+    }
+
+    @Test
+    public void testLimitProduceOnTopicStartsWith() throws IOException, AuthenticationException, ExecutionException, InterruptedException {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+
+        // root token
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("revocation_id", Arrays.asList(string(UUID.randomUUID().toString()))));
+        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        // limit on tenant/namespace/PREFIX*
+        String PREFIX = "PREFIX";
+        Block attenuated = rootBiscuit.create_block();
+        attenuated.add_caveat(caveat(constrained_rule("limited_topic",
+                Arrays.asList(string(tenant), string(namespace), var(2)),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("produce")))),
+                Arrays.asList(new StrConstraint.Prefix(2, PREFIX))
+        )));
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, attenuated.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        Biscuit finalBiscuit = biscuit;
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+            @Override
+            public String getCommandData() {
+                return finalBiscuit.serialize_b64().get();
+            }
+        });
+
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+
+        log.debug(biscuit.print());
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/test"), null, authedBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX), null, authedBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX + "-concat"), null, authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/test"), null, authedBiscuit, TopicOperation.CONSUME, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX), null, authedBiscuit, TopicOperation.CONSUME, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + PREFIX + "-concat"), null, authedBiscuit, TopicOperation.CONSUME, null));
     }
 }
