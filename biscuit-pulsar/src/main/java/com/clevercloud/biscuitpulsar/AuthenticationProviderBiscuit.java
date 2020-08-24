@@ -19,6 +19,7 @@ import java.util.Base64;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
+import org.apache.pulsar.broker.authentication.AuthenticationProviderToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   final static String HTTP_HEADER_NAME = "Authorization";
   final static String HTTP_HEADER_VALUE_PREFIX = "Bearer ";
 
-  final static String BISCUIT = "biscuit";
+  final static String BISCUIT = "token";
 
   final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
   final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
@@ -60,11 +61,16 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   }
 
   public String authenticate(AuthenticationDataSource authData) throws AuthenticationException {
-    String biscuit = getBiscuit(authData);
-    return parseBiscuit(biscuit);
+    String bearer = getBearerValue(authData);
+
+    if (isJWT(bearer)) {
+      return AuthenticationProviderToken.getToken(authData);
+    } else {
+      return parseBiscuit(bearer);
+    }
   }
 
-  public static String getBiscuit(AuthenticationDataSource authData) throws AuthenticationException {
+  public static String getBearerValue(AuthenticationDataSource authData) throws AuthenticationException {
     if (authData.hasDataFromCommand()) {
       // Authenticate Pulsar binary connection
       return authData.getCommandData();
@@ -77,18 +83,18 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
       }
 
       // Remove prefix
-      String biscuit = httpHeaderValue.substring(HTTP_HEADER_VALUE_PREFIX.length());
-      return validateBiscuit(biscuit);
+      String bearer = httpHeaderValue.substring(HTTP_HEADER_VALUE_PREFIX.length());
+      return validateBearer(bearer);
     } else {
       throw new AuthenticationException("No biscuit credentials passed");
     }
   }
 
-  private static String validateBiscuit(final String biscuit) throws AuthenticationException {
-    if (StringUtils.isNotBlank(biscuit)) {
-      return biscuit;
+  private static String validateBearer(final String bearer) throws AuthenticationException {
+    if (StringUtils.isNotBlank(bearer)) {
+      return bearer;
     } else {
-      throw new AuthenticationException("Blank biscuit found");
+      throw new AuthenticationException("Blank Bearer found");
     }
   }
 
@@ -115,6 +121,10 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     } catch (IllegalArgumentException e) {
       throw new AuthenticationException(e.getMessage());
     }
+  }
+
+  private boolean isJWT(String jwt) {
+    return jwt.split("\\.").length == 3;
   }
 
   // using that instead of Hex.decodeHex from commons-codec because there's an incompatibility with Pulsar's dependencies
