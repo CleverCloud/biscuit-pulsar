@@ -1,7 +1,0 @@
-target
-data
-.*
-*.idea
-*.idea/**
-*.iml
-*.ipr
