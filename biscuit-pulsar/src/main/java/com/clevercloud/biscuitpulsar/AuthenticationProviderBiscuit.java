@@ -123,8 +123,15 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     }
   }
 
-  private boolean isJWT(String jwt) {
-    return jwt.split("\\.").length == 3;
+  public static boolean isJWT(String jwt) {
+    // https://tools.ietf.org/html/rfc7519#section-7.2
+    String[] splittedJWT = jwt.split("\\.");
+
+    if (splittedJWT.length >= 2) {
+      String encodedJOSEHeader = splittedJWT[0];
+      return !encodedJOSEHeader.matches("\\S+");
+    }
+    return false;
   }
 
   // using that instead of Hex.decodeHex from commons-codec because there's an incompatibility with Pulsar's dependencies
