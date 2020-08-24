@@ -402,14 +402,19 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public CompletableFuture<Boolean> isSuperUser(String role, ServiceConfiguration serviceConfiguration) {
-        return isSuperUser(role, null, serviceConfiguration);
+    public CompletableFuture<Boolean> allowSourceOpsAsync(NamespaceName namespaceName, String s, AuthenticationDataSource authenticationDataSource) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> allowSinkOpsAsync(NamespaceName namespaceName, String s, AuthenticationDataSource authenticationDataSource) {
+        return null;
     }
 
     @Override
     public CompletableFuture<Boolean> isSuperUser(String role, AuthenticationDataSource authenticationData, ServiceConfiguration serviceConfiguration) {
         if (!role.startsWith("biscuit:")) {
-            return defaultProvider.isSuperUser(role, serviceConfiguration);
+            return defaultProvider.isSuperUser(role, authenticationData, serviceConfiguration);
         }
 
         CompletableFuture<Boolean> permissionFuture = new CompletableFuture<>();
@@ -444,12 +449,12 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public CompletableFuture<Boolean> allowTenantOperationAsync(String tenantName, String originalRole, String role, TenantOperation operation, AuthenticationDataSource authData) {
+    public CompletableFuture<Boolean> allowTenantOperationAsync(String tenantName, String role, TenantOperation operation, AuthenticationDataSource authData) {
         if (!role.startsWith("biscuit:")) {
-            return defaultProvider.allowTenantOperationAsync(tenantName, originalRole, originalRole, operation, authData);
+            return defaultProvider.allowTenantOperationAsync(tenantName, role, operation, authData);
         }
 
-        return isSuperUser(role, conf).thenCompose(isSuperUser -> {
+        return isSuperUser(role, authData, conf).thenCompose(isSuperUser -> {
             if (isSuperUser) {
                 return CompletableFuture.completedFuture(true);
             } else {
@@ -459,9 +464,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public CompletableFuture<Boolean> allowNamespaceOperationAsync(NamespaceName namespaceName, String originalRole, String role, NamespaceOperation operation, AuthenticationDataSource authData) {
+    public CompletableFuture<Boolean> allowNamespaceOperationAsync(NamespaceName namespaceName, String role, NamespaceOperation operation, AuthenticationDataSource authData) {
         if (!role.startsWith("biscuit:")) {
-            return defaultProvider.allowNamespaceOperationAsync(namespaceName, originalRole, originalRole, operation, authData);
+            return defaultProvider.allowNamespaceOperationAsync(namespaceName, role, operation, authData);
         }
 
         CompletableFuture<Boolean> isAuthorizedFuture = new CompletableFuture<>();
@@ -517,7 +522,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                     )
             )));
         } else {
-            return isSuperUser(role, conf);
+            return isSuperUser(role, authData, conf);
         }
 
         log.info(verifier.print_world());
@@ -537,9 +542,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public CompletableFuture<Boolean> allowNamespacePolicyOperationAsync(NamespaceName namespaceName, PolicyName policy, PolicyOperation operation, String originalRole, String role, AuthenticationDataSource authData) {
+    public CompletableFuture<Boolean> allowNamespacePolicyOperationAsync(NamespaceName namespaceName, PolicyName policy, PolicyOperation operation, String role, AuthenticationDataSource authData) {
         if (!role.startsWith("biscuit:")) {
-            return defaultProvider.allowNamespacePolicyOperationAsync(namespaceName, policy, operation, originalRole, role, authData);
+            return defaultProvider.allowNamespacePolicyOperationAsync(namespaceName, policy, operation, role, authData);
         }
 
         CompletableFuture<Boolean> isAuthorizedFuture = new CompletableFuture<>();
@@ -623,7 +628,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                     )
             )));
         } else {
-            return isSuperUser(role, conf);
+            return isSuperUser(role, authData, conf);
         }
 
         log.info(verifier.print_world());
@@ -644,11 +649,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public CompletableFuture<Boolean> allowTopicOperationAsync(TopicName topicName, String originalRole, String role,
+    public CompletableFuture<Boolean> allowTopicOperationAsync(TopicName topicName, String role,
                                                                TopicOperation operation,
                                                                AuthenticationDataSource authData) {
         if (!role.startsWith("biscuit:")) {
-            return defaultProvider.allowTopicOperationAsync(topicName, originalRole, role, operation, authData);
+            return defaultProvider.allowTopicOperationAsync(topicName, role, operation, authData);
         }
 
         CompletableFuture<Boolean> isAuthorizedFuture = new CompletableFuture<>();
