@@ -773,7 +773,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                     )
             )));
         } else {
-            return isSuperUser(role, conf);
+            return isSuperUser(role, authData, conf);
         }
 
         log.info(verifier.print_world());
