@@ -722,6 +722,77 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 .thenCombine(isAuthorizedFuture, (isSuperUser, isAuthorized) -> isSuperUser || isAuthorized);
     }
 
+    @Override
+    public CompletableFuture<Boolean> allowTopicPolicyOperationAsync(TopicName topicName, String role, PolicyName policy, PolicyOperation operation, AuthenticationDataSource authData) {
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowTopicPolicyOperationAsync(topicName, role, policy, operation, authData);
+        }
+
+        CompletableFuture<Boolean> isAuthorizedFuture = new CompletableFuture<>();
+
+        Either<Error, Verifier> res = verifierFromBiscuit(role);
+        if (res.isLeft()) {
+            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
+            isAuthorizedFuture.complete(false);
+            return isAuthorizedFuture;
+        }
+
+        Verifier verifier = res.get();
+
+        verifier.set_time();
+
+        Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
+
+        if (policyName.isPresent()) {
+            verifier.add_fact(fact("namespace",
+                    Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()))));
+
+            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
+            verifier.add_fact(fact("namespace_operation",
+                    Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+
+            verifier.add_rule(constrained_rule("right",
+                    Arrays.asList(s("authority"), var(0), var(1), var(2)),
+                    Arrays.asList(
+                            pred("right", Arrays.asList(s("authority"), s("admin"))),
+                            pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))
+                    ),
+                    Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
+                            "partition_read",
+                            "partition_write"
+                    )))))
+            );
+
+            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
+            verifier.add_caveat(new Caveat(Arrays.asList(
+                    rule("check_right",
+                            Arrays.asList(),
+                            Arrays.asList(
+                                    pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase())))
+                            )
+                    )
+            )));
+        } else {
+            return isSuperUser(role, conf);
+        }
+
+        log.info(verifier.print_world());
+
+        Either verifierResult = verifier.verify();
+        if (verifierResult.isLeft()) {
+            log.warn("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation.toString(), topicName.getNamespacePortion(), role, verifierResult.getLeft());
+        } else {
+            log.info("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] authorized.", operation.toString(), topicName.getNamespacePortion());
+        }
+
+        isAuthorizedFuture.complete(verifierResult.isRight());
+
+        CompletableFuture<Boolean> isSuperUserFuture = isSuperUser(role, authData, conf);
+
+        return isSuperUserFuture
+                .thenCombine(isAuthorizedFuture, (isSuperUser, isAuthorized) -> isSuperUser || isAuthorized);
+    }
+
     // those management functions will be performed outside of the authorization provider
     @Override
     public CompletableFuture<Void> grantPermissionAsync(NamespaceName namespace, Set<AuthAction> actions, String role, String authDataJson) {
