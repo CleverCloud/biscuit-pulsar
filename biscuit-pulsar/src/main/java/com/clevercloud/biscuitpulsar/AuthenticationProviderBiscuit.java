@@ -39,6 +39,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   static String SEALING_KEY;
 
   private AuthenticationProviderToken jwtAuthenticator;
+  private Boolean isJWTSupported;
 
   public void close() throws IOException {
     // noop
@@ -48,8 +49,8 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     log.info("Initialize Pulsar Biscuit Authentication plugin...");
 
     log.info("With JWT authentication support?");
-    Boolean supportJwt = Boolean.parseBoolean((String) serviceConfiguration.getProperty(CONF_BISCUIT_SUPPORT_JWT));
-    if (supportJwt) {
+    isJWTSupported = Boolean.parseBoolean((String) serviceConfiguration.getProperty(CONF_BISCUIT_SUPPORT_JWT));
+    if (isJWTSupported) {
       log.info("JWT authentication support ENABLED.");
       jwtAuthenticator = new AuthenticationProviderToken();
       jwtAuthenticator.initialize(serviceConfiguration);
@@ -79,8 +80,13 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   public String authenticate(AuthenticationDataSource authData) throws AuthenticationException {
     String bearer = getBearerValue(authData);
 
-    if (isJWT(bearer)) {
-      return jwtAuthenticator.authenticate(authData);
+    if (isJWTSupported) {
+      try {
+        return parseBiscuit(bearer);
+      } catch (AuthenticationException e) {
+        log.info("Biscuit decode failed, backing up to JWT");
+        return jwtAuthenticator.authenticate(authData);
+      }
     } else {
       return parseBiscuit(bearer);
     }
@@ -137,17 +143,6 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     } catch (IllegalArgumentException e) {
       throw new AuthenticationException(e.getMessage());
     }
-  }
-
-  public static boolean isJWT(String jwt) {
-    // https://tools.ietf.org/html/rfc7519#section-7.2
-    String[] splittedJWT = jwt.split("\\.");
-
-    if (splittedJWT.length >= 2) {
-      String encodedJOSEHeader = splittedJWT[0];
-      return encodedJOSEHeader.matches("\\S+");
-    }
-    return false;
   }
 
   // using that instead of Hex.decodeHex from commons-codec because there's an incompatibility with Pulsar's dependencies
