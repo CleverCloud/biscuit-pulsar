@@ -33,23 +33,39 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
   final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
   final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
+  final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
 
   private PublicKey rootKey;
   static String SEALING_KEY;
+
+  private AuthenticationProviderToken jwtAuthenticator;
 
   public void close() throws IOException {
     // noop
   }
 
   public void initialize(ServiceConfiguration serviceConfiguration) throws IOException {
-    log.info("Initialize Apache Pulsar Biscuit authentication plugin");
+    log.info("Initialize Pulsar Biscuit Authentication plugin...");
+
+    log.info("With JWT authentication support?");
+    Boolean supportJwt = Boolean.parseBoolean((String) serviceConfiguration.getProperty(CONF_BISCUIT_SUPPORT_JWT));
+    if (supportJwt) {
+      log.info("JWT authentication support ENABLED.");
+      jwtAuthenticator = new AuthenticationProviderToken();
+      jwtAuthenticator.initialize(serviceConfiguration);
+      log.info("JWT authentication initialized.");
+    } else {
+      log.info("JWT authentication support DISABLED.");
+    }
+
+    log.info("Biscuit authentication configuration...");
     String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_PUBLIC_ROOT_KEY);
     log.debug("Got biscuit root public key: {}", key);
     SEALING_KEY = (String) serviceConfiguration.getProperty(CONF_BISCUIT_SEALING_KEY);
     log.debug("Got biscuit sealing key: {}", SEALING_KEY);
-
     try {
       rootKey = new PublicKey(hexStringToByteArray(key));
+      log.info("Biscuit authentication initialized.");
     } catch (Exception e) {
       log.error("Could not decode Biscuit root public key: {}", e);
       throw new IOException();
@@ -64,7 +80,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     String bearer = getBearerValue(authData);
 
     if (isJWT(bearer)) {
-      return AuthenticationProviderToken.getToken(authData);
+      return jwtAuthenticator.authenticate(authData);
     } else {
       return parseBiscuit(bearer);
     }
