@@ -17,7 +17,6 @@ import org.apache.pulsar.client.api.PulsarClientException;
 /**
  * Biscuit based authentication provider.
  */
-@Deprecated
 public class AuthenticationBiscuit implements Authentication, EncodedAuthenticationParameterSupport {
   private Supplier<String> biscuitSupplier;
 
@@ -39,7 +38,7 @@ public class AuthenticationBiscuit implements Authentication, EncodedAuthenticat
 
   @Override
   public String getAuthMethodName() {
-    return "biscuit";
+    return "token";
   }
 
   @Override
