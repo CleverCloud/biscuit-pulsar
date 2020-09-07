@@ -19,6 +19,7 @@ import java.util.Base64;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
+import org.apache.pulsar.broker.authentication.AuthenticationProviderToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,27 +29,44 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   final static String HTTP_HEADER_NAME = "Authorization";
   final static String HTTP_HEADER_VALUE_PREFIX = "Bearer ";
 
-  final static String BISCUIT = "biscuit";
+  final static String BISCUIT = "token";
 
   final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
   final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
+  final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
 
   private PublicKey rootKey;
   static String SEALING_KEY;
+
+  private AuthenticationProviderToken jwtAuthenticator;
+  private Boolean isJWTSupported;
 
   public void close() throws IOException {
     // noop
   }
 
   public void initialize(ServiceConfiguration serviceConfiguration) throws IOException {
-    log.info("Initialize Apache Pulsar Biscuit authentication plugin");
+    log.info("Initialize Pulsar Biscuit Authentication plugin...");
+
+    log.info("With JWT authentication support?");
+    isJWTSupported = Boolean.parseBoolean((String) serviceConfiguration.getProperty(CONF_BISCUIT_SUPPORT_JWT));
+    if (isJWTSupported) {
+      log.info("JWT authentication support ENABLED.");
+      jwtAuthenticator = new AuthenticationProviderToken();
+      jwtAuthenticator.initialize(serviceConfiguration);
+      log.info("JWT authentication initialized.");
+    } else {
+      log.info("JWT authentication support DISABLED.");
+    }
+
+    log.info("Biscuit authentication configuration...");
     String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_PUBLIC_ROOT_KEY);
     log.debug("Got biscuit root public key: {}", key);
     SEALING_KEY = (String) serviceConfiguration.getProperty(CONF_BISCUIT_SEALING_KEY);
     log.debug("Got biscuit sealing key: {}", SEALING_KEY);
-
     try {
       rootKey = new PublicKey(hexStringToByteArray(key));
+      log.info("Biscuit authentication initialized.");
     } catch (Exception e) {
       log.error("Could not decode Biscuit root public key: {}", e);
       throw new IOException();
@@ -60,11 +78,21 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   }
 
   public String authenticate(AuthenticationDataSource authData) throws AuthenticationException {
-    String biscuit = getBiscuit(authData);
-    return parseBiscuit(biscuit);
+    String bearer = getBearerValue(authData);
+
+    if (isJWTSupported) {
+      try {
+        return parseBiscuit(bearer);
+      } catch (AuthenticationException e) {
+        log.info("Biscuit decode failed, backing up to JWT");
+        return jwtAuthenticator.authenticate(authData);
+      }
+    } else {
+      return parseBiscuit(bearer);
+    }
   }
 
-  public static String getBiscuit(AuthenticationDataSource authData) throws AuthenticationException {
+  public static String getBearerValue(AuthenticationDataSource authData) throws AuthenticationException {
     if (authData.hasDataFromCommand()) {
       // Authenticate Pulsar binary connection
       return authData.getCommandData();
@@ -77,18 +105,18 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
       }
 
       // Remove prefix
-      String biscuit = httpHeaderValue.substring(HTTP_HEADER_VALUE_PREFIX.length());
-      return validateBiscuit(biscuit);
+      String bearer = httpHeaderValue.substring(HTTP_HEADER_VALUE_PREFIX.length());
+      return validateBearer(bearer);
     } else {
       throw new AuthenticationException("No biscuit credentials passed");
     }
   }
 
-  private static String validateBiscuit(final String biscuit) throws AuthenticationException {
-    if (StringUtils.isNotBlank(biscuit)) {
-      return biscuit;
+  private static String validateBearer(final String bearer) throws AuthenticationException {
+    if (StringUtils.isNotBlank(bearer)) {
+      return bearer;
     } else {
-      throw new AuthenticationException("Blank biscuit found");
+      throw new AuthenticationException("Blank Bearer found");
     }
   }
 
