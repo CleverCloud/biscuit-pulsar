@@ -145,7 +145,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
     if (splittedJWT.length >= 2) {
       String encodedJOSEHeader = splittedJWT[0];
-      return !encodedJOSEHeader.matches("\\S+");
+      return encodedJOSEHeader.matches("\\S+");
     }
     return false;
   }
