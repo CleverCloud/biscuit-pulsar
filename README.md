@@ -6,7 +6,7 @@
 
 ## Status
 
-We are using 1.1.10 at Clever Cloud, on production, but major changes can still occurs.
+We are using 1.5.5-SNAPSHOT at Clever Cloud.
 
 ## Build & Tests
 
@@ -47,7 +47,7 @@ We currently are using this script to put libs on pulsar nodes:
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/cafe/cryptography/curve25519-elisabeth/0.1.0/curve25519-elisabeth-0.1.0.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.2/vavr-0.10.2.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/0.2.7/biscuit-java-0.2.7.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/0.3.1/biscuit-java-0.3.1.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar"
 ```
 
@@ -71,6 +71,8 @@ authorizationProvider=com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit
 ### --- Biscuit Authentication Provider --- ###
 biscuitPublicRootKey=@@BISCUIT_PUBLIC_ROOT_KEY@@
 biscuitSealingKey=@@BISCUIT_PUBLIC_SEALING_KEY@@
+# support JWT side by side with Biscuit for AuthenticationToken
+biscuitSupportJWT=true|false
 ```
 
 ```bash
