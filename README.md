@@ -87,6 +87,15 @@ sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" proxy.conf
 sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" standalone.conf
 ```
 
+## Usage
+
+```java
+PulsarClient client = PulsarClient.builder()
+    .authentication(new AuthenticationToken(<BISCUIT_b64 or JWT>))
+    .serviceUrl("pulsar://localhost:6650")
+    .build();
+```
+
 ## Publish
 
 You need to define this in `~/.m2/settings.xml` using your bintray APIKEY on the Clever Cloud organisation:
