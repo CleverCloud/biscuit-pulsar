@@ -256,7 +256,7 @@ public class AuthorizationProviderBiscuitTest {
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test"),  authedBiscuit, TopicOperation.PRODUCE, null));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test123"),  authedBiscuit, TopicOperation.CONSUME, authData));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test123"),  authedBiscuit, TopicOperation.PRODUCE, null));
-        assertFalse(authorizationProvider.isSuperUser(authedBiscuit, conf).get());
+        assertFalse(authorizationProvider.isSuperUser(authedBiscuit, null, conf).get());
     }
 
     @Test
