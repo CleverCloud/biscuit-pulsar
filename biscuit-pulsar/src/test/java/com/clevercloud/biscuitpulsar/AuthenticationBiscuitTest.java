@@ -23,7 +23,7 @@ public class AuthenticationBiscuitTest {
     PulsarClientImpl pulsarClient = new PulsarClientImpl(clientConfig);
 
     Authentication authBiscuit = pulsarClient.getConfiguration().getAuthentication();
-    assertEquals(authBiscuit.getAuthMethodName(), "biscuit");
+    assertEquals(authBiscuit.getAuthMethodName(), "token");
 
     AuthenticationDataProvider authData = authBiscuit.getAuthData();
     assertTrue(authData.hasDataFromCommand());
@@ -44,7 +44,7 @@ public class AuthenticationBiscuitTest {
   public void testAuthBiscuitConfigNoPrefix() throws Exception {
     AuthenticationBiscuit authBiscuit = new AuthenticationBiscuit();
     authBiscuit.configure("my-test-biscuit-string");
-    assertEquals(authBiscuit.getAuthMethodName(), "biscuit");
+    assertEquals(authBiscuit.getAuthMethodName(), "token");
 
     AuthenticationDataProvider authData = authBiscuit.getAuthData();
     assertTrue(authData.hasDataFromCommand());
