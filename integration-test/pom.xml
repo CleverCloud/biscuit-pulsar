@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.clever-cloud</groupId>
     <artifactId>biscuit-pulsar-parent</artifactId>
-    <version>1.5.5-SNAPSHOT</version>
+    <version>1.5.6-SNAPSHOT</version>
   </parent>
 
   <artifactId>integration-test</artifactId>
