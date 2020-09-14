@@ -46,7 +46,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
 
     <logback-classic.version>1.2.3</logback-classic.version>
-    <biscuit-java.version>0.4.0</biscuit-java.version>
+    <biscuit-java.version>0.4.1</biscuit-java.version>
     <pulsar-broker.version>2.7.0-SNAPSHOT</pulsar-broker.version>
     <grpc.version>1.18.0</grpc.version>
     <vavr.version>0.10.2</vavr.version>
@@ -54,10 +54,10 @@
     <hadoop-unit.version>3.7</hadoop-unit.version>
 
     <assertj-core.version>3.14.0</assertj-core.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13</junit.version>
     <jackson-annotations.version>2.10.1</jackson-annotations.version>
     <slf4j-api.version>1.7.29</slf4j-api.version>
-    <protobuf.version>3.8.0</protobuf.version>
+    <protobuf.version>3.13.0</protobuf.version>
   </properties>
 
   <profiles>

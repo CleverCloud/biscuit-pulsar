@@ -46,9 +46,9 @@ We currently are using this script to put libs on pulsar nodes:
 #!/bin/bash
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/cafe/cryptography/curve25519-elisabeth/0.1.0/curve25519-elisabeth-0.1.0.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.2/vavr-0.10.2.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/0.4.0/biscuit-java-0.4.0.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.8.0/protobuf-java-3.8.0.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.3/vavr-0.10.3.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/0.4.1/biscuit-java-0.4.1.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.13.0/protobuf-java-3.13.0.jar"
 ```
 
 For nodes configuration:
