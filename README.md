@@ -91,7 +91,7 @@ sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" standalone.conf
 
 ```java
 PulsarClient client = PulsarClient.builder()
-    .authentication(new AuthenticationToken(<BISCUIT_b64 or JWT>))
+    .authentication(new AuthenticationToken("<BISCUIT_b64 or JWT>"))
     .serviceUrl("pulsar://localhost:6650")
     .build();
 ```
