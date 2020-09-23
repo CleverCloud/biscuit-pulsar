@@ -1,6 +1,7 @@
 package com.clevercloud.biscuitpulsar;
 
 import com.clevercloud.biscuit.crypto.PublicKey;
+import com.clevercloud.biscuitpulsar.revocation.RevokedChecker;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authentication.AuthenticationProvider;
@@ -34,12 +35,15 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
   final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
   final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
+  final static String CONF_BISCUIT_REVOCATION_ENABLED = "biscuitRevocationCheckerEnabled";
 
   private PublicKey rootKey;
   static String SEALING_KEY;
 
   private AuthenticationProviderToken jwtAuthenticator;
   private Boolean isJWTSupported;
+  private RevokedChecker revokedChecker;
+  private boolean isRevocationCheckerEnabled;
 
   public void close() throws IOException {
     // noop
@@ -66,11 +70,24 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     log.debug("Got biscuit sealing key: {}", SEALING_KEY);
     try {
       rootKey = new PublicKey(hexStringToByteArray(key));
-      log.info("Biscuit authentication initialized.");
     } catch (Exception e) {
       log.error("Could not decode Biscuit root public key: {}", e);
       throw new IOException();
     }
+
+    log.info("With revocation check support?");
+    isRevocationCheckerEnabled = Boolean.parseBoolean((String) serviceConfiguration.getProperty(CONF_BISCUIT_REVOCATION_ENABLED));
+    if (isRevocationCheckerEnabled) {
+      log.info("Revocation check support ENABLED.");
+      revokedChecker = new RevokedChecker(serviceConfiguration, rootKey);
+      revokedChecker.startFetcher();
+      log.info("Revocation check initialized.");
+    } else {
+      log.info("Revocation check support DISABLED.");
+    }
+
+    log.info("Biscuit authentication initialized.");
+
   }
 
   public String getAuthMethodName() {
