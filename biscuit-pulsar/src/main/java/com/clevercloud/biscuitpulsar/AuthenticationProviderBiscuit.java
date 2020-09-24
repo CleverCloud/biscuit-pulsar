@@ -87,7 +87,6 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     }
 
     log.info("Biscuit authentication initialized.");
-
   }
 
   public String getAuthMethodName() {
@@ -152,6 +151,11 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
           throw new AuthenticationException("This biscuit was not generated with the expected root key");
         }
         log.debug("Root key is valid");
+
+        if (isRevocationCheckerEnabled && revokedChecker.isRevoked(realBiscuit)) {
+          throw new AuthenticationException("This biscuit is revoked.");
+        }
+        log.debug("not revoked");
 
         byte[] sealed = realBiscuit.seal(SEALING_KEY.getBytes()).get();
         log.debug("Biscuit deserialized and sealed");
