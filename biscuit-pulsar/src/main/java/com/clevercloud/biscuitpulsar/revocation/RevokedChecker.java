@@ -15,6 +15,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +23,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static io.vavr.API.Left;
+import static io.vavr.API.Right;
 
 public class RevokedChecker {
     private static final Logger log = LoggerFactory.getLogger(RevokedChecker.class);
@@ -44,17 +48,24 @@ public class RevokedChecker {
         this.fetchRevokedExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("revoked-fetcher"));
     }
 
-    public void startFetcher() {
+    public Either<IOException, Void> startFetcher() {
         log.info("First fetch");
-        fetch();
+
+        Either<IOException, List<UUID>> firstFetch = fetch();
+
+        if (firstFetch.isLeft()) {
+            return Left(firstFetch.getLeft());
+        }
 
         final int initialDelay = this.fetchInterval;
         final int interval = this.fetchInterval;
         log.info("Scheduling a thread to fetch revoked after [{}] seconds in background", interval);
         this.fetchRevokedExecutor.scheduleAtFixedRate(this::fetch, initialDelay, interval, TimeUnit.SECONDS);
+
+        return Right(null);
     }
 
-    private void fetch() {
+    private Either<IOException, List<UUID>> fetch() {
         Response response = ClientBuilder
                 .newClient()
                 .target(revokedIdsURL)
@@ -63,13 +74,12 @@ public class RevokedChecker {
 
         if (response.getStatus() >= 200 && response.getStatus() <= 299) {
             List<UUID> newList = response.readEntity(new GenericType<List<UUID>>() {});
-            this.revokedList = newList;
             log.debug(newList.toString());
+            this.revokedList = newList;
+            return Right(newList);
         } else {
-            log.error(" -> can't fetch owner: HTTP STATUS " + response.getStatus());
-            if (revokedList == null) {
-                throw new RuntimeException("Revocation Check is active but couldn't get the revocation list from " + revokedIdsURL);
-            }
+            log.error("Can't fetch revocation list from URL: {}, HTTP STATUS: {}.", revokedIdsURL, response.getStatus());
+            return Left(new IOException("Can't fetch revocation list from URL: " + revokedIdsURL + ", HTTP STATUS: " + response.getStatus()));
         }
     }
 

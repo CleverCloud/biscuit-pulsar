@@ -80,7 +80,10 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     if (isRevocationCheckerEnabled) {
       log.info("Revocation check support ENABLED.");
       revokedChecker = new RevokedChecker(serviceConfiguration, rootKey);
-      revokedChecker.startFetcher();
+      Either<IOException, Void> either = revokedChecker.startFetcher();
+      if (either.isLeft()) {
+        throw either.getLeft();
+      }
       log.info("Revocation check initialized.");
     } else {
       log.info("Revocation check support DISABLED.");
