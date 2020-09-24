@@ -58,6 +58,7 @@
     <jackson-annotations.version>2.10.1</jackson-annotations.version>
     <slf4j-api.version>1.7.29</slf4j-api.version>
     <protobuf.version>3.13.0</protobuf.version>
+    <jersey.version>2.31</jersey.version>
   </properties>
 
   <profiles>
@@ -223,6 +224,27 @@
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson-annotations.version}</version>
       </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client -->
+      <dependency>
+        <groupId>org.glassfish.jersey.core</groupId>
+        <artifactId>jersey-client</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.glassfish.jersey.inject</groupId>
+        <artifactId>jersey-hk2</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+      <dependency>
+        <groupId>org.glassfish.jersey.media</groupId>
+        <artifactId>jersey-media-json-jackson</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+
 
       <dependency>
         <groupId>fr.jetoile.hadoop</groupId>
