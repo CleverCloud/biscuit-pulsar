@@ -41,8 +41,6 @@ public class RevokedChecker {
         this.revokedIdsURL = (String) serviceConfiguration.getProperty(CONF_BISCUIT_REVOCATION_URL);
         this.fetchInterval = Integer.parseInt((String) serviceConfiguration.getProperty(CONF_BISCUIT_REVOCATION_FETCH_INTERVAL));
 
-        this.revokedList = new ArrayList<>();
-
         this.fetchRevokedExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("revoked-fetcher"));
     }
 
@@ -69,6 +67,9 @@ public class RevokedChecker {
             log.debug(newList.toString());
         } else {
             log.error(" -> can't fetch owner: HTTP STATUS " + response.getStatus());
+            if (revokedList == null) {
+                throw new RuntimeException("Revocation Check is active but couldn't get the revocation list from " + revokedIdsURL);
+            }
         }
     }
 
