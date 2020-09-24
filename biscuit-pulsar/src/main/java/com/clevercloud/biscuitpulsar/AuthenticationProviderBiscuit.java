@@ -27,15 +27,15 @@ import org.slf4j.LoggerFactory;
 public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   private static final Logger log = LoggerFactory.getLogger(AuthenticationProviderBiscuit.class);
 
-  final static String HTTP_HEADER_NAME = "Authorization";
-  final static String HTTP_HEADER_VALUE_PREFIX = "Bearer ";
+  public final static String HTTP_HEADER_NAME = "Authorization";
+  public final static String HTTP_HEADER_VALUE_PREFIX = "Bearer ";
 
-  final static String BISCUIT = "token";
+  public final static String BISCUIT = "token";
 
-  final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
-  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
-  final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
-  final static String CONF_BISCUIT_REVOCATION_ENABLED = "biscuitRevocationCheckerEnabled";
+  public final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
+  public final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
+  public final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
+  public final static String CONF_BISCUIT_REVOCATION_ENABLED = "biscuitRevocationCheckerEnabled";
 
   private PublicKey rootKey;
   static String SEALING_KEY;
