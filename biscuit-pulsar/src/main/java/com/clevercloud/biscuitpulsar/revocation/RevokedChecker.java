@@ -1,9 +1,11 @@
 package com.clevercloud.biscuitpulsar.revocation;
 
 import com.clevercloud.biscuit.crypto.PublicKey;
+import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.Verifier;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.vavr.control.Either;
 import io.vavr.control.Option;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.slf4j.Logger;
@@ -70,15 +72,16 @@ public class RevokedChecker {
         }
     }
 
-    public Boolean isRevoked(Biscuit b) {
-        Verifier v = Verifier.make(b, Option.of(this.rootKey)).get();
-        log.debug(revokedList.toString());
-        List<UUID> revoked = v.get_revocation_ids();
-        log.debug(revoked.toString());
-        List<UUID> intersect = revokedList.parallelStream()
-                .filter(revoked::contains)
-                .collect(Collectors.toList());
+    public Boolean isRevoked(Biscuit b) throws IllegalArgumentException {
+        Either<Error, Verifier> either = Verifier.make(b, Option.of(this.rootKey));
 
-        return intersect.size() > 0;
+        return either.map(verifier -> {
+            List<UUID> revoked = verifier.get_revocation_ids();
+            List<UUID> intersect = revokedList.parallelStream()
+                    .filter(revoked::contains)
+                    .collect(Collectors.toList());
+
+            return intersect.size() > 0;
+        }).getOrElseThrow(error -> new IllegalArgumentException("Biscuit Verifier can't be created" + error.toString()));
     }
 }
