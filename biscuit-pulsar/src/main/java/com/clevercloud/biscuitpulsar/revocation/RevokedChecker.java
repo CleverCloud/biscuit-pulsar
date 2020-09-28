@@ -16,7 +16,6 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -87,7 +86,7 @@ public class RevokedChecker {
         Either<Error, Verifier> either = Verifier.make(b, Option.of(this.rootKey));
 
         return either.map(verifier -> {
-            List<UUID> revoked = verifier.get_revocation_ids();
+            List<UUID> revoked = verifier.get_revocation_ids().stream().map(s -> UUID.fromString(s)).collect(Collectors.toList());
             List<UUID> intersect = revokedList.parallelStream()
                     .filter(revoked::contains)
                     .collect(Collectors.toList());
