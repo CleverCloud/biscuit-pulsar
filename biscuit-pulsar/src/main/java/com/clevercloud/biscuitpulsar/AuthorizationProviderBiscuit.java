@@ -656,6 +656,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_fact(fact("topic_operation",
                 Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(operation.toString().toLowerCase()))));
 
+        // if produce|consume right is authorized then we authorize lookup
         if (operation.equals(TopicOperation.LOOKUP)) {
             verifier.add_fact(fact("topic_operation",
                     Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
