@@ -687,6 +687,15 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 ))))
         ));
 
+        verifier.add_caveat(new Caveat(Arrays.asList(
+                rule("check_right",
+                        Arrays.asList(),
+                        Arrays.asList(
+                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(operation.toString().toLowerCase())))
+                        )
+                )
+        )));
+
         log.debug(verifier.print_world());
 
         Either verifierResult = verifier.verify();
