@@ -84,7 +84,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
       try {
         return parseBiscuit(bearer);
       } catch (AuthenticationException e) {
-        log.info("Biscuit decode failed, backing up to JWT");
+        log.debug("Biscuit decode failed, backing up to JWT");
         return jwtAuthenticator.authenticate(authData);
       }
     } else {
