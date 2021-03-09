@@ -39,6 +39,186 @@ public class AuthorizationProviderBiscuitTest {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProviderBiscuitTest.class);
 
     @Test
+    public void testProduceAndNotConsumeOnTopic() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), string(tenant), string(namespace), string(topic), s("produce")),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("produce"))))));
+        Biscuit biscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+
+            @Override
+            public String getCommandData() {
+                return biscuit.serialize_b64().get();
+            }
+        });
+
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.CONSUME, null));
+    }
+
+    @Test
+    public void testProduceAndNotConsumeAttenuatedOnTopic() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("revocation_id", Arrays.asList(date(Date.from(Instant.now())))));
+        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        Block block = rootBiscuit.create_block();
+        block.add_caveat(new Caveat(Arrays.asList(
+                rule("limited_right",
+                        Arrays.asList(string(tenant), string(namespace), string(topic), s("produce")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("produce")))))
+        )));
+
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+
+            @Override
+            public String getCommandData() {
+                return biscuit.serialize_b64().get();
+            }
+        });
+
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.CONSUME, null));
+    }
+
+    @Test
+    public void testConsumeAndNotProduceOnTopic() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_rule(rule("right",
+                Arrays.asList(s("authority"), string(tenant), string(namespace), string(topic), s("consume")),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("consume"))))));
+        Biscuit biscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+
+            @Override
+            public String getCommandData() {
+                return biscuit.serialize_b64().get();
+            }
+        });
+
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.CONSUME, null));
+    }
+
+    @Test
+    public void testConsumerAndNotProduceAttenuatedOnTopic() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("revocation_id", Arrays.asList(date(Date.from(Instant.now())))));
+        authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
+
+        Block block = rootBiscuit.create_block();
+        block.add_caveat(new Caveat(Arrays.asList(
+                rule("limited_right",
+                        Arrays.asList(string(tenant), string(namespace), string(topic), s("consume")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("consume")))))
+        )));
+
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+        String authedBiscuit = provider.authenticate(new AuthenticationDataSource() {
+            @Override
+            public boolean hasDataFromCommand() {
+                return true;
+            }
+
+            @Override
+            public String getCommandData() {
+                return biscuit.serialize_b64().get();
+            }
+        });
+
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic),  authedBiscuit, TopicOperation.CONSUME, null));
+    }
+
+    @Test
     public void testTopicCreation() throws Exception {
         SecureRandom rng = new SecureRandom();
         KeyPair root = new KeyPair(rng);
