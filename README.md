@@ -6,7 +6,7 @@
 
 ## Status
 
-We are using 1.5.5-SNAPSHOT at Clever Cloud.
+We are using 1.5.5-SNAPSHOT at Clever Cloud. As we waiting for official pulsar version to support more granularity in authZ as we defined in our fork.
 
 ## Build & Tests
 
