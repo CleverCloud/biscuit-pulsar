@@ -1,6 +1,7 @@
 package com.clevercloud.biscuitpulsar;
 
 import com.clevercloud.biscuit.crypto.PublicKey;
+import com.clevercloud.biscuitpulsar.revocation.RevokedChecker;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authentication.AuthenticationProvider;
@@ -26,20 +27,23 @@ import org.slf4j.LoggerFactory;
 public class AuthenticationProviderBiscuit implements AuthenticationProvider {
   private static final Logger log = LoggerFactory.getLogger(AuthenticationProviderBiscuit.class);
 
-  final static String HTTP_HEADER_NAME = "Authorization";
-  final static String HTTP_HEADER_VALUE_PREFIX = "Bearer ";
+  public final static String HTTP_HEADER_NAME = "Authorization";
+  public final static String HTTP_HEADER_VALUE_PREFIX = "Bearer ";
 
-  final static String BISCUIT = "token";
+  public final static String BISCUIT = "token";
 
-  final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
-  final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
-  final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
+  public final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
+  public final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
+  public final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
+  public final static String CONF_BISCUIT_REVOCATION_ENABLED = "biscuitRevocationCheckerEnabled";
 
   private PublicKey rootKey;
   static String SEALING_KEY;
 
   private AuthenticationProviderToken jwtAuthenticator;
   private Boolean isJWTSupported;
+  private RevokedChecker revokedChecker;
+  private boolean isRevocationCheckerEnabled;
 
   public void close() throws IOException {
     // noop
@@ -66,11 +70,26 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     log.debug("Got biscuit sealing key: {}", SEALING_KEY);
     try {
       rootKey = new PublicKey(hexStringToByteArray(key));
-      log.info("Biscuit authentication initialized.");
     } catch (Exception e) {
       log.error("Could not decode Biscuit root public key: {}", e);
       throw new IOException();
     }
+
+    log.info("With revocation check support?");
+    isRevocationCheckerEnabled = Boolean.parseBoolean((String) serviceConfiguration.getProperty(CONF_BISCUIT_REVOCATION_ENABLED));
+    if (isRevocationCheckerEnabled) {
+      log.info("Revocation check support ENABLED.");
+      revokedChecker = new RevokedChecker(serviceConfiguration, rootKey);
+      Either<IOException, Void> either = revokedChecker.startFetcher();
+      if (either.isLeft()) {
+        throw either.getLeft();
+      }
+      log.info("Revocation check initialized.");
+    } else {
+      log.info("Revocation check support DISABLED.");
+    }
+
+    log.info("Biscuit authentication initialized.");
   }
 
   public String getAuthMethodName() {
@@ -135,6 +154,11 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
           throw new AuthenticationException("This biscuit was not generated with the expected root key");
         }
         log.debug("Root key is valid");
+
+        if (isRevocationCheckerEnabled && revokedChecker.isRevoked(realBiscuit)) {
+          throw new AuthenticationException("This biscuit is revoked.");
+        }
+        log.debug("not revoked");
 
         byte[] sealed = realBiscuit.seal(SEALING_KEY.getBytes()).get();
         log.debug("Biscuit deserialized and sealed");
