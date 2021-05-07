@@ -3,7 +3,6 @@ package com.clevercloud.biscuitpulsar;
 import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.Verifier;
-import com.clevercloud.biscuit.token.builder.Caveat;
 import com.clevercloud.biscuit.token.builder.Fact;
 import com.clevercloud.biscuit.token.builder.Predicate;
 import io.vavr.control.Either;
@@ -174,31 +173,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.set_time();
 
-        verifier.add_fact(fact("topic",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
+        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
+        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #produce) <- " +
+                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #produce)").get();
 
-        verifier.add_fact(fact("topic_operation",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
-
-        verifier.add_rule(constrained_rule("right",
-                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("admin"))),
-                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
-                ),
-                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
-                        "produce"
-                ))))
-        ));
-
-        verifier.add_caveat(new Caveat(Arrays.asList(
-                rule("check_right",
-                        Arrays.asList(),
-                        Arrays.asList(
-                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce")))
-                        )
-                )
-        )));
+        verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
+        verifier.allow();
 
         log.debug(verifier.print_world());
 
@@ -232,31 +213,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.set_time();
 
-        verifier.add_fact(fact("topic",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
+        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
+        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #consume) <- " +
+                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #consume)").get();
 
-        verifier.add_fact(fact("topic_operation",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
-
-        verifier.add_rule(constrained_rule("right",
-                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("admin"))),
-                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
-                ),
-                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
-                        "consume"
-                ))))
-        ));
-
-        verifier.add_caveat(new Caveat(Arrays.asList(
-                rule("check_right",
-                        Arrays.asList(),
-                        Arrays.asList(
-                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume")))
-                        )
-                )
-        )));
+        verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
+        verifier.allow();
 
         // add these rules because there are two ways to verify that we can consume: with a right defined on the topic
         // or one defined on the subscription
@@ -308,32 +271,13 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.set_time();
 
-        verifier.add_fact(fact("topic",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
+        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
+        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #lookup) <- " +
+                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #lookup)").get();
 
-        verifier.add_fact(fact("topic_operation",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup"))));
-
-        // topic_operation $3 must be lookup
-        verifier.add_rule(constrained_rule("right",
-                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("admin"))),
-                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
-                ),
-                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
-                        "lookup"
-                ))))
-        ));
-
-        verifier.add_caveat(new Caveat(Arrays.asList(
-                rule("check_right",
-                        Arrays.asList(),
-                        Arrays.asList(
-                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("lookup")))
-                        )
-                )
-        )));
+        verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
+        verifier.allow();
 
         log.debug(verifier.print_world());
 
@@ -365,18 +309,14 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
 
-        verifier.add_fact(fact("namespace", Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
+        verifier.add_fact("namespace(#ambient, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\")").get();
         verifier.add_operation("functions");
 
         verifier.set_time();
 
-        verifier.add_caveat(caveat(rule(
-                "checked_allowfunction_right",
-                Arrays.asList(string(namespaceName.getTenant()), string(namespaceName.getLocalName())),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("namespace"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s("functions")))
-                )
-        )));
+        // should we have #namespace here? why not have #topic for topic rights to be coherent?
+        verifier.add_check("check if right(#authority, #namespace, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #functions)").get();
+        verifier.allow();
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
@@ -418,11 +358,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.set_time();
 
-        verifier.add_caveat(caveat(rule(
-                "checked_issuperuser_right",
-                Arrays.asList(s("admin")),
-                Arrays.asList(pred("right", Arrays.asList(s("authority"), s("admin")))))
-        ));
+        verifier.add_check("check if right(#authority, #admin)").get();
+        verifier.allow();
 
         Either verifierResult = verifier.verify();
         if (verifierResult.isLeft()) {
@@ -472,43 +409,21 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
         if (operationName.isPresent()) {
-            verifier.add_fact(fact("namespace",
-                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
+            verifier.add_fact("namespace(#ambient, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\")").get();
+            verifier.add_fact("namespace_operation(#ambient, \""+
+                    namespaceName.getTenant()+
+                    "\", \"" + namespaceName.getLocalName()+
+                    "\", #"+operationName.get().toString().toLowerCase()+")").get();
+
+            // what about operations get_permission, grant_permission and revoke_permission?
+            verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
+                    "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
+                    "[ #create_topic, #get_topic, #get_topics, #delete_topic, #add_bundle, #delete_bundle, " +
+                      "#get_bundle, #clear_backlog, #unsubscribe ].contains($operation)").get();
 
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_fact(fact("namespace_operation",
-                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase()))));
-
-            verifier.add_rule(constrained_rule("right",
-                    Arrays.asList(s("authority"), var(0), var(1), var(2)),
-                    Arrays.asList(
-                            pred("right", Arrays.asList(s("authority"), s("admin"))),
-                            pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))
-                    ),
-                    Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
-                            "create_topic",
-                            "get_topic",
-                            "get_topics",
-                            "delete_topic",
-                            "add_bundle",
-                            "delete_bundle",
-                            "get_bundle",
-                            //"get_permission",
-                            //"grant_permission",
-                            //"revoke_permission",
-                            "clear_backlog",
-                            "unsubscribe"
-                    ))))
-            ));
-
-            // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_caveat(new Caveat(Arrays.asList(
-                    rule("check_right", Arrays.asList(),
-                            Arrays.asList(
-                                    pred("right", Arrays.asList(s("authority"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(operationName.get().toString().toLowerCase())))
-                            )
-                    )
-            )));
+            verifier.add_check("check if right(#authority, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #functions)").get();
+            verifier.allow();
         } else {
             return isSuperUser(role, authData, conf);
         }
@@ -548,70 +463,61 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
 
         if (policyName.isPresent()) {
-            verifier.add_fact(fact("namespace",
-                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()))));
+            verifier.add_fact("namespace(#ambient, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\")").get();
+            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
+            verifier.add_fact("namespace_operation(#ambient, \""+
+                    namespaceName.getTenant()+
+                    "\", \"" + namespaceName.getLocalName()+
+                    "\", #"+policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()+")").get();
+
+            verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
+                    "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
+                    "[ "+
+                            "all_read, "+
+                            //"#all_write"
+                            //"#anty_affinity_write"
+                            "#anty_affinity_read, "+
+                            "#backlog_read, "+
+                            "#backlog_write, "+
+                            "#compaction_read, "+
+                            "#compaction_write, "+
+                            "#delayed_delivery_read, "+
+                            "#delayed_delivery_write, "+
+                            "#deduplication_read, "+
+                            "#deduplication_write, "+
+                            "#max_consumers_read, "+
+                            "#max_consumers_write, "+
+                            "#max_producers_read, "+
+                            "#max_producers_write, "+
+                            "#max_unacked_read, "+
+                            "#max_unacked_write, "+
+                            "#offload_read, "+
+                            //"#offload_write"
+                            "#persistence_read, "+
+                            "#persistence_write, "+
+                            "#rate_write, "+
+                            "#rate_read, "+
+                            "#retention_read, "+
+                            "#retention_write, "+
+                            "#replication_read, "+
+                            //"#replication_write"
+                            "#replication_rate_read, "+
+                            //"#replication_rate_write"
+                            "#schema_compatibility_strategy_read, "+
+                            "#schema_compatibility_strategy_write, "+
+                            "#subscription_auth_mode_read, "+
+                            "#subscription_auth_mode_write, "+
+                            "#encryption_read, "+
+                            "#encryption_write, "+
+                            "#ttl_read, "+
+                            "#ttl_write "
+                                    +"].contains($operation)").get();
+
 
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact(fact("namespace_operation",
-                    Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+            verifier.add_check("check if right(#authority, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #"+policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()+")").get();
+            verifier.allow();
 
-            verifier.add_rule(constrained_rule("right",
-                    Arrays.asList(s("authority"), var(0), var(1), var(2)),
-                    Arrays.asList(
-                            pred("right", Arrays.asList(s("authority"), s("admin"))),
-                            pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))
-                    ),
-                    Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
-                            "all_read",
-                            //"all_write",
-                            //"anty_affinity_write",
-                            "anty_affinity_read",
-                            "backlog_read",
-                            "backlog_write",
-                            "compaction_read",
-                            "compaction_write",
-                            "delayed_delivery_read",
-                            "delayed_delivery_write",
-                            "deduplication_read",
-                            "deduplication_write",
-                            "max_consumers_read",
-                            "max_consumers_write",
-                            "max_producers_read",
-                            "max_producers_write",
-                            "max_unacked_read",
-                            "max_unacked_write",
-                            "offload_read",
-                            //"offload_write",
-                            "persistence_read",
-                            "persistence_write",
-                            "rate_write",
-                            "rate_read",
-                            "retention_read",
-                            "retention_write",
-                            "replication_read",
-                            //"replication_write",
-                            "replication_rate_read",
-                            //"replication_rate_write",
-                            "schema_compatibility_strategy_read",
-                            "schema_compatibility_strategy_write",
-                            "subscription_auth_mode_read",
-                            "subscription_auth_mode_write",
-                            "encryption_read",
-                            "encryption_write",
-                            "ttl_read",
-                            "ttl_write"
-                    )))))
-            );
-
-            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_caveat(new Caveat(Arrays.asList(
-                    rule("check_right",
-                            Arrays.asList(),
-                            Arrays.asList(
-                                    pred("right", Arrays.asList(s("authority"), string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase())))
-                            )
-                    )
-            )));
         } else {
             return isSuperUser(role, authData, conf);
         }
@@ -650,59 +556,48 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.set_time();
 
-        verifier.add_fact(fact("topic",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()))));
-
-        verifier.add_fact(fact("topic_operation",
-                Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(operation.toString().toLowerCase()))));
+        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
+        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #"+operation.toString().toLowerCase()+")").get();
 
         // if produce|consume right is authorized then we authorize lookup
         if (operation.equals(TopicOperation.LOOKUP)) {
-            verifier.add_fact(fact("topic_operation",
-                    Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume"))));
-            verifier.add_fact(fact("topic_operation",
-                    Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("produce"))));
+            verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
+            verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
         }
 
-        verifier.add_rule(constrained_rule("right",
-                Arrays.asList(s("authority"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("admin"))),
-                        pred("topic_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
-                ),
-                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
-                        "lookup",
-                        "produce",
-                        "consume",
-                        "compact",
-                        "expire_messages",
-                        "offload",
-                        "peek_messages",
-                        "reset_cursor",
-                        "skip",
-                        "terminate",
-                        //"unload",
-                        //"grant_permission",
-                        //"get_permission",
-                        //"revoke_permission",
-                        //"add_bundle_range",
-                        //"get_bundle_range",
-                        //"delete_bundle_range",
-                        "subscribe",
-                        "get_subscriptions",
-                        "unsubscribe",
-                        "get_stats"
-                ))))
-        ));
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, $operation) <- " +
+                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, $operation)," +
+                "[" +
+                    "#lookup, "+
+                    "#produce, "+
+                    "#consume, "+
+                    "#compact, "+
+                    "#expire_messages, "+
+                    "#offload, "+
+                    "#peek_messages, "+
+                    "#reset_cursor, "+
+                    "#skip, "+
+                    "#terminate, "+
+                    //"unload",
+                    //"grant_permission",
+                    //"get_permission",
+                    //"revoke_permission",
+                    //"add_bundle_range",
+                    //"get_bundle_range",
+                    //"delete_bundle_range",
+                    "#subscribe, "+
+                    "#get_subscriptions, "+
+                    "#unsubscribe, "+
+                    "#get_stats"+
+                " ].contains($operation)").get();
 
-        verifier.add_caveat(new Caveat(Arrays.asList(
-                rule("check_right",
-                        Arrays.asList(),
-                        Arrays.asList(
-                                pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(operation.toString().toLowerCase())))
-                        )
-                )
-        )));
+        verifier.add_check("check if right( #authority, \""+
+                        topicName.getTenant()+"\", \""+
+                        topicName.getNamespacePortion()+"\", \""+
+                        topicName.getLocalName()+
+                        "\", #"+operation.toString().toLowerCase()+")").get();
+
+        verifier.allow();
 
         log.debug(verifier.print_world());
 
@@ -739,34 +634,25 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
 
         if (policyName.isPresent()) {
-            verifier.add_fact(fact("namespace",
-                    Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()))));
+            verifier.add_fact("namespace(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\")").get();
+            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
+            verifier.add_fact("namespace_operation(#ambient, \""+
+                    topicName.getTenant()+
+                    "\", \"" + topicName.getNamespacePortion()+
+                    "\", #"+policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()+")").get();
+
+            verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
+                    "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
+                    "[#partition_read, #partition_write].contains($operation)"
+            ).get();
 
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact(fact("namespace_operation",
-                    Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()))));
+            verifier.add_check("check if right( #authority, \""+
+                    topicName.getTenant()+"\", \""+
+                    topicName.getNamespacePortion()+
+                    "\",  #"+policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()+")").get();
 
-            verifier.add_rule(constrained_rule("right",
-                    Arrays.asList(s("authority"), var(0), var(1), var(2)),
-                    Arrays.asList(
-                            pred("right", Arrays.asList(s("authority"), s("admin"))),
-                            pred("namespace_operation", Arrays.asList(s("ambient"), var(0), var(1), var(2)))
-                    ),
-                    Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
-                            "partition_read",
-                            "partition_write"
-                    )))))
-            );
-
-            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_caveat(new Caveat(Arrays.asList(
-                    rule("check_right",
-                            Arrays.asList(),
-                            Arrays.asList(
-                                    pred("right", Arrays.asList(s("authority"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), s(policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase())))
-                            )
-                    )
-            )));
+            verifier.allow();
         } else {
             return isSuperUser(role, authData, conf);
         }
