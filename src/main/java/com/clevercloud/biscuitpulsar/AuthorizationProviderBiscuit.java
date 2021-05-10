@@ -473,7 +473,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
                     "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
                     "[ "+
-                            "all_read, "+
+                            "#all_read, "+
                             //"#all_write"
                             //"#anty_affinity_write"
                             "#anty_affinity_read, "+
