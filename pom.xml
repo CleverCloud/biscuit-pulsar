@@ -25,7 +25,7 @@
     <biscuit-java.version>1.1.1</biscuit-java.version>
     <logback-classic.version>1.2.3</logback-classic.version>
     <protobuf.version>3.13.0</protobuf.version>
-    <pulsar-broker.version>2.8.0-SNAPSHOT</pulsar-broker.version>
+    <pulsar.version>2.8.0-SNAPSHOT</pulsar.version>
     <slf4j-api.version>1.7.29</slf4j-api.version>
     <vavr.version>0.10.2</vavr.version>
 
@@ -69,6 +69,19 @@
       <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>repository.apache.org-snapshot</id>
+      <url>https://repository.apache.org/snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
   <profiles>
     <profile>
@@ -164,17 +177,17 @@
     <dependency>
       <groupId>org.apache.pulsar</groupId>
       <artifactId>pulsar-client</artifactId>
-      <version>${pulsar-broker.version}</version>
+      <version>${pulsar.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.pulsar</groupId>
       <artifactId>pulsar-broker</artifactId>
-      <version>${pulsar-broker.version}</version>
+      <version>${pulsar.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.pulsar</groupId>
       <artifactId>pulsar-broker-common</artifactId>
-      <version>${pulsar-broker.version}</version>
+      <version>${pulsar.version}</version>
       <exclusions>
         <exclusion>
           <groupId>io.grpc</groupId>
