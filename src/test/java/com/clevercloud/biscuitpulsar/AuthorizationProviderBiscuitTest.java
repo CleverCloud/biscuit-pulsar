@@ -626,8 +626,8 @@ public class AuthorizationProviderBiscuitTest {
                 Arrays.asList(new StrConstraint.Prefix(2, PREFIX))
         )));
         */
-        authority_builder.add_check("check if limited_topic(\""+tenant+"\", \""+namespace+"\", $topic) <- topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, #produce), " +
-                "[ #\"" + PREFIX +"/ ].contains($topic)").get();
+        authority_builder.add_check("check if topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, #produce), " +
+                "\"" + PREFIX +"\".starts_with($topic)").get();
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, attenuated.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
