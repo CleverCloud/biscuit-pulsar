@@ -570,8 +570,8 @@ public class AuthorizationProviderBiscuitTest {
         )));
 
          */
-        authority_builder.add_check("check if limited_topic(\""+tenant+"\", \""+namespace+"\", $topic) <- topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, $operation), " +
-                "[ #\"" + PREFIX +"/ ].contains($topic)").get();
+        attenuated.add_check("check if topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, $operation), " +
+                "$topic.starts_with(\"" + PREFIX + "\")").get();
         biscuit = biscuit.attenuate(rng, root, attenuated.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -626,8 +626,8 @@ public class AuthorizationProviderBiscuitTest {
                 Arrays.asList(new StrConstraint.Prefix(2, PREFIX))
         )));
         */
-        authority_builder.add_check("check if topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, #produce), " +
-                "\"" + PREFIX +"\".starts_with($topic)").get();
+        attenuated.add_check("check if topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, #produce), " +
+                "$topic.starts_with(\"" + PREFIX + "\")").get();
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, attenuated.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
