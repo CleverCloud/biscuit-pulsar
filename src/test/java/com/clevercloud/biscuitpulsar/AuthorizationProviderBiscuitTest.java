@@ -4,8 +4,7 @@ import com.clevercloud.biscuit.crypto.KeyPair;
 import com.clevercloud.biscuit.datalog.SymbolTable;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.builder.Block;
-import com.clevercloud.biscuit.token.builder.Caveat;
-import com.clevercloud.biscuit.token.builder.constraints.StrConstraint;
+import com.clevercloud.biscuit.token.builder.Check;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.naming.NamespaceName;
@@ -20,12 +19,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -95,7 +92,7 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
                         Arrays.asList(string(tenant), string(namespace), string(topic), s("produce")),
                         Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("produce")))))
@@ -185,7 +182,7 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
                         Arrays.asList(string(tenant), string(namespace), string(topic), s("consume")),
                         Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("consume")))))
@@ -271,11 +268,11 @@ public class AuthorizationProviderBiscuitTest {
                 Arrays.asList(s("authority"), string(tenant), string(namespace), s("create_topic")),
                 Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), s("create_topic"))))));
         authority_builder.add_rule(rule("right",
-                Arrays.asList(s("authority"), string(tenant), string(namespace), var(2), s("produce")),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("produce"))))));
+                Arrays.asList(s("authority"), string(tenant), string(namespace), var("2"), s("produce")),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), s("produce"))))));
         authority_builder.add_rule(rule("right",
-                Arrays.asList(s("authority"), string(tenant), string(namespace), var(2), s("consume")),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("consume"))))));
+                Arrays.asList(s("authority"), string(tenant), string(namespace), var("2"), s("consume")),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), s("consume"))))));
         Biscuit biscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -321,13 +318,13 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3))))),
+                        Arrays.asList(string(tenant), string(namespace), var("2"), var("3")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), var("3"))))),
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2)),
-                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))))
+                        Arrays.asList(string(tenant), string(namespace), var("2")),
+                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2")))))
         )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
@@ -372,13 +369,13 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3))))),
+                        Arrays.asList(string(tenant), string(namespace), var("2"), var("3")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), var("3"))))),
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2)),
-                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))))
+                        Arrays.asList(string(tenant), string(namespace), var("2")),
+                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2")))))
         )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
@@ -448,22 +445,13 @@ public class AuthorizationProviderBiscuitTest {
         Block authority_builder = new Block(0, symbols);
         authority_builder.add_fact(fact("revocation_id", Arrays.asList(date(Date.from(Instant.now())))));
         authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("admin"))));
-        authority_builder.add_rule(constrained_rule("right",
-                Arrays.asList(s("authority"), s("namespace"), var(0), var(1), var(2)),
-                Arrays.asList(pred("ns_operation", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), var(2)))),
-                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(2, new HashSet<>(Arrays.asList(
-                        "create_topic",
-                        "get_topic",
-                        "get_topics"
-                ))))
-        ));
-        authority_builder.add_rule(constrained_rule("right",
-                Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), var(3)),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), var(3)))),
-                Arrays.asList(new com.clevercloud.biscuit.token.builder.constraints.SymbolConstraint.InSet(3, new HashSet<>(Arrays.asList(
-                        "lookup"
-                ))))
-        ));
+        authority_builder.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
+                "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
+                "[ #create_topic, #get_topic, #get_topics ].contains($operation)").get();
+        authority_builder.add_rule("right(#authority, \"topic\", $tenant, $namespace, $topic, $operation) <- " +
+                "right(#authority, #admin), topic_operation(#authority, $tenant, $namespace, $topic, $operation), " +
+                "[ #lookup ].contains($operation)").get();
+
 
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
         assertNotNull(rootBiscuit);
@@ -561,24 +549,29 @@ public class AuthorizationProviderBiscuitTest {
 
         // limit on ns tenant/namespace
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3))))),
+                        Arrays.asList(string(tenant), string(namespace), var("2"), var("3")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), var("3"))))),
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2)),
-                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2)))))
+                        Arrays.asList(string(tenant), string(namespace), var("2")),
+                        Arrays.asList(pred("namespace_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2")))))
         )));
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
 
         // limit on tenant/namespace/PREFIX*
         String PREFIX = "INSTANCE_PREFIX_TO_DEFINE";
         Block attenuated = biscuit.create_block();
-        attenuated.add_caveat(caveat(constrained_rule("limited_topic",
-                Arrays.asList(string(tenant), string(namespace), var(2)),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), var(3)))),
+        /*
+        attenuated.add_check(Check(constrained_rule("limited_topic",
+                Arrays.asList(string(tenant), string(namespace), var("2")),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), var("3")))),
                 Arrays.asList(new StrConstraint.Prefix(2, PREFIX))
         )));
+
+         */
+        attenuated.add_check("check if topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, $operation), " +
+                "$topic.starts_with(\"" + PREFIX + "\")").get();
         biscuit = biscuit.attenuate(rng, root, attenuated.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -626,11 +619,15 @@ public class AuthorizationProviderBiscuitTest {
         // limit on tenant/namespace/PREFIX*
         String PREFIX = "PREFIX";
         Block attenuated = rootBiscuit.create_block();
-        attenuated.add_caveat(caveat(constrained_rule("limited_topic",
-                Arrays.asList(string(tenant), string(namespace), var(2)),
-                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("produce")))),
+        /*
+        attenuated.add_check(Check(constrained_rule("limited_topic",
+                Arrays.asList(string(tenant), string(namespace), var("2")),
+                Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), s("produce")))),
                 Arrays.asList(new StrConstraint.Prefix(2, PREFIX))
         )));
+        */
+        attenuated.add_check("check if topic_operation(#ambient, \""+tenant+"\", \""+namespace+"\", $topic, #produce), " +
+                "$topic.starts_with(\"" + PREFIX + "\")").get();
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, attenuated.build()).get();
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
@@ -678,10 +675,10 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("consume")))))
+                        Arrays.asList(string(tenant), string(namespace), var("2"), var("3")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), s("consume")))))
         )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
@@ -726,10 +723,10 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("produce")))))
+                        Arrays.asList(string(tenant), string(namespace), var("2"), var("3")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), s("produce")))))
         )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
@@ -774,10 +771,10 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("lookup")))))
+                        Arrays.asList(string(tenant), string(namespace), var("2"), var("3")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), s("lookup")))))
         )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
@@ -822,10 +819,10 @@ public class AuthorizationProviderBiscuitTest {
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, authority_builder.build()).get();
 
         Block block = rootBiscuit.create_block();
-        block.add_caveat(new Caveat(Arrays.asList(
+        block.add_check(new Check(Arrays.asList(
                 rule("limited_right",
-                        Arrays.asList(string(tenant), string(namespace), var(2), var(3)),
-                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var(2), s("lookup")))))
+                        Arrays.asList(string(tenant), string(namespace), var("2"), var("3")),
+                        Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), var("2"), s("lookup")))))
         )));
 
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block.build()).get();
