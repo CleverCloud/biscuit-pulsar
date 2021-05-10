@@ -181,9 +181,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
         verifier.allow();
 
-        log.debug(verifier.print_world());
-
         Either verifierResult = verifier.verify();
+        log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.warn("Biscuit canProduceAsync on [{}] NOT authorized for role [{}]: {}", topicName.toString(), role, verifierResult.getLeft());
             return isSuperUser(role, authenticationData, conf);
@@ -239,9 +238,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                 )
         )));*/
 
-        log.debug(verifier.print_world());
-
         Either verifierResult = verifier.verify();
+        log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.warn("Biscuit canConsumeAsync on [{}] NOT authorized for role [{}]: {}", topicName.toString(), role, verifierResult.getLeft());
             return isSuperUser(role, authenticationData, conf);
@@ -279,9 +277,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
         verifier.allow();
 
-        log.debug(verifier.print_world());
-
         Either verifierResult = verifier.verify();
+        log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.warn("Biscuit canLookupAsync on [{}] NOT authorized for role [{}]: {}", topicName.toString(), role, verifierResult.getLeft());
             return isSuperUser(role, authenticationData, conf);
@@ -428,9 +425,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return isSuperUser(role, authData, conf);
         }
 
-        log.debug(verifier.print_world());
-
         Either verifierResult = verifier.verify();
+        log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.warn("Biscuit allowNamespaceOperationAsync [{}] on [{}] NOT authorized for role [{}]: {}", operation.toString(), namespaceName.toString(), role, verifierResult.getLeft());
             return isSuperUser(role, authData, conf);
@@ -522,9 +518,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return isSuperUser(role, authData, conf);
         }
 
-        log.debug(verifier.print_world());
-
         Either verifierResult = verifier.verify();
+        log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.warn("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation.toString(), namespaceName.toString(), role, verifierResult.getLeft());
             return isSuperUser(role, authData, conf);
@@ -599,9 +594,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.allow();
 
-        log.debug(verifier.print_world());
-
         Either verifierResult = verifier.verify();
+        log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.warn("Biscuit allowTopicOperationAsync [{}] on [{}] NOT authorized for role [{}]: {}", operation.toString(), topicName.toString(), role, verifierResult.getLeft());
             return isSuperUser(role, authData, conf);
@@ -657,9 +651,8 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return isSuperUser(role, authData, conf);
         }
 
-        log.debug(verifier.print_world());
-
         Either verifierResult = verifier.verify();
+        log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.warn("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation.toString(), topicName.getNamespacePortion(), role, verifierResult.getLeft());
             return isSuperUser(role, authData, conf);
