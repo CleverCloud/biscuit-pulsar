@@ -3,29 +3,9 @@
 [![Central Version](https://img.shields.io/maven-central/v/com.clever-cloud/biscuit-pulsar)](https://mvnrepository.com/artifact/com.clever-cloud/biscuit-pulsar)
 [![Nexus Version](https://img.shields.io/nexus/r/com.clever-cloud/biscuit-pulsar?server=https%3A%2F%2Foss.sonatype.org)](https://search.maven.org/artifact/com.clever-cloud/biscuit-pulsar)
 
-## Status
+## Requirements
 
-We are using 1.5.5-SNAPSHOT at Clever Cloud.
-
-## Build & Tests
-
-```bash
-# run all tests and build
-mvn clean install
-
-# build module like biscuit-pulsar only
-mvn clean install -pl biscuit-pulsar
-
-# build without tests
-mvn clean install -Dmaven.test.skip=true
-
-# run AuthorizationProviderBiscuitTest in module biscuit-pulsar
-mvn clean install -Dtest=AuthorizationProviderBiscuitTest -pl biscuit-pulsar
-```
-
-## Informations
-
-`biscuit-pulsar` needs protobuf 3.8.0+ as defined in its `pom.xml`.
+`biscuit-pulsar` needs protobuf 3.
 
 ## Configuration
 
@@ -46,7 +26,7 @@ We currently are using this script to put libs on pulsar nodes:
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/cafe/cryptography/curve25519-elisabeth/0.1.0/curve25519-elisabeth-0.1.0.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.3/vavr-0.10.3.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/0.4.1/biscuit-java-0.4.1.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/1.1.1/biscuit-java-1.1.1.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.13.0/protobuf-java-3.13.0.jar"
 ```
 
@@ -95,24 +75,41 @@ PulsarClient client = PulsarClient.builder()
     .build();
 ```
 
-## Publish
-
-You need to define this in `~/.m2/settings.xml` using your bintray APIKEY on the Clever Cloud organisation:
-
-```xml
-<server>
-  <id>bintray-repo-maven-biscuit-pulsar</id>
-  <username>@@BINTRAY_USERNAME@</username>
-  <password>@@YOUR_BINTRAY_API_KEY@@</password>
-</server>
-```
-
-Then run
+## Development
 
 ```bash
-mvn deploy
+# run all tests and build
+mvn clean install
+
+# build without tests
+mvn clean install -Dmaven.test.skip=true
 ```
 
-It will prompt for GPG passphrase stored on Clever Cloud vault (search for `maven@clever-cloud.com`).
+## Publish
 
-Then on bintray package homepage run Sync to Central to push to Maven Central.
+### Release process
+
+```bash
+mvn versions:set -DnewVersion=<NEW-VERSION>
+```
+
+Commit and tag the version. Then push and create a GitHub release.
+
+Finally, publishing to Nexus and Maven Central is **automatically triggered by creating a GitHub release** using GitHub Actions.
+
+```bash
+mvn versions:set -DnewVersion=<NEW-VERSION With Minor +1 and -SNAPSHOT>
+```
+
+Commit and push.
+
+### GitHub Actions Requirements
+
+Publish requires following secrets:
+
+* `OSSRH_USERNAME` the Sonatype username
+* `OSSRH_TOKEN` the Sonatype token
+* `OSSRH_GPG_SECRET_KEY` the gpg private key used to sign packages
+* `OSSRH_GPG_SECRET_KEY_PASSWORD` the gpg private key password
+
+These are stored in GitHub repository's secrets.
