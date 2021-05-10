@@ -419,7 +419,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                       "#get_bundle, #clear_backlog, #unsubscribe ].contains($operation)").get();
 
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_check("check if right(#authority, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #" + operationName.toString().toLowerCase()).get();
+            verifier.add_check("check if right(#authority, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #" + operationName.get().toString().toLowerCase() + ")").get();
             verifier.allow();
         } else {
             return isSuperUser(role, authData, conf);
