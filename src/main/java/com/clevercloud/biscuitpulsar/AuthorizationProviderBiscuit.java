@@ -1,11 +1,15 @@
 package com.clevercloud.biscuitpulsar;
 
+import com.clevercloud.biscuit.crypto.KeyPair;
+import com.clevercloud.biscuit.datalog.SymbolTable;
 import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.Verifier;
+import com.clevercloud.biscuit.token.builder.Block;
 import com.clevercloud.biscuit.token.builder.Fact;
 import com.clevercloud.biscuit.token.builder.Predicate;
 import io.vavr.control.Either;
+import io.vavr.control.Option;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authorization.AuthorizationProvider;
@@ -24,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
@@ -33,8 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static com.clevercloud.biscuit.token.builder.Utils.*;
-import static io.vavr.API.Left;
-import static io.vavr.API.Right;
+import static io.vavr.API.*;
 
 public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProviderBiscuit.class);
@@ -44,11 +48,32 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     private PulsarAuthorizationProvider defaultProvider;
 
     public AuthorizationProviderBiscuit() {
+        warmUp();
     }
 
     public AuthorizationProviderBiscuit(ServiceConfiguration conf, ConfigurationCacheService configCache)
             throws IOException {
         initialize(conf, configCache);
+        warmUp();
+    }
+
+    private void warmUp() {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        for (int i = 0; i < 1000; i++){
+            Block authority_builder = new Block(0, symbols);
+            authority_builder.add_rule(rule("right",
+                    Arrays.asList(s("authority"), string(tenant), string(namespace), string(topic), s("produce")),
+                    Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("produce"))))));
+            Verifier v = Verifier.make(Biscuit.make(rng, root, symbols, authority_builder.build()).get(), Option.of(root.public_key())).get();
+            v.verify();
+        }
     }
 
     private Fact topic(TopicName topicName) {
