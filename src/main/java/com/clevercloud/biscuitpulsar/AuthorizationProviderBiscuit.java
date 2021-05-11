@@ -87,7 +87,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();
-            log.error(e.toString());
+            log.error("Failed to deserialize Biscuit from sealed [%s] due to [%s].", role, e.toString());
             return Left(e);
         }
 
@@ -112,7 +112,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
@@ -151,7 +150,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
@@ -190,7 +188,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
@@ -229,7 +226,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
@@ -276,7 +272,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             permissionFuture.complete(false);
             return permissionFuture;
         }
@@ -325,7 +320,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
@@ -377,7 +371,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
@@ -472,7 +465,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
@@ -546,7 +538,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Either<Error, Verifier> res = verifierFromBiscuit(role);
         if (res.isLeft()) {
-            log.error("Biscuit Verifier can't be built from role [{}]: {}", role, res.getLeft());
             isAuthorizedFuture.complete(false);
             return isAuthorizedFuture;
         }
