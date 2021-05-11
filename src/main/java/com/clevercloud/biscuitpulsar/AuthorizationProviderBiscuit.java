@@ -57,6 +57,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         warmUp();
     }
 
+    /**
+     * This method is called when creating new AuthorizationProviderBiscuit to warm up JVM datalog engine and get rid
+     * of timeouts that can occurs during first Verifier.verify()
+     */
     private void warmUp() {
         SecureRandom rng = new SecureRandom();
         KeyPair root = new KeyPair(rng);
