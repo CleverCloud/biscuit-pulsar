@@ -196,6 +196,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
+    //FIXME: should be reworked
     public CompletableFuture<Boolean> allowFunctionOpsAsync(NamespaceName namespaceName, String role, AuthenticationDataSource authenticationData) {
         if (!role.startsWith("biscuit:")) {
             return defaultProvider.allowFunctionOpsAsync(namespaceName, role, authenticationData);
