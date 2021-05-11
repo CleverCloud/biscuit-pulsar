@@ -87,7 +87,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         );
         if (deser.isLeft()) {
             Error e = deser.getLeft();
-            log.error("Failed to deserialize Biscuit from sealed [%s] due to [%s].", role, e.toString());
+            log.error("Failed to deserialize Biscuit from sealed [{}] due to [{}].", role, e.toString());
             return Left(e);
         }
 
