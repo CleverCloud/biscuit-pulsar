@@ -117,8 +117,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.set_time();
         verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
         verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
-        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #produce) <- " +
-                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #produce)").get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #produce) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #produce)").get();
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
         verifier.allow();
 
@@ -149,8 +148,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.set_time();
         verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
         verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
-        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #consume) <- " +
-                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #consume)").get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #consume) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #consume)").get();
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
         verifier.allow();
 
@@ -181,8 +179,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.set_time();
         verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
         verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
-        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #lookup) <- " +
-                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #lookup)").get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #lookup) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #lookup)").get();
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
         verifier.allow();
 
