@@ -76,33 +76,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
     }
 
-    private Fact topic(TopicName topicName) {
-        return fact("topic", Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())));
-    }
-
-    private Fact subscription(TopicName topicName, String subscription) {
-        return fact("subscription", Arrays.asList(s("ambient"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), string(subscription)));
-    }
-
-    private Predicate topicRight(TopicName topicName, String right) {
-        return pred("right", Arrays.asList(s("authority"), s("topic"),
-                string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(right)));
-    }
-
-    private Fact namespace(NamespaceName namespaceName) {
-        return fact("namespace", Arrays.asList(s("ambient"), string(namespaceName.getTenant()), string(namespaceName.getLocalName())));
-    }
-
-    private Predicate namespaceOperationRight(NamespaceName namespaceName, String right) {
-        return pred("right", Arrays.asList(s("authority"), s("namespace"),
-                string(namespaceName.getTenant()), string(namespaceName.getLocalName()), s(right)));
-    }
-
-    private Predicate topicSubscriptionRight(TopicName topicName, String subscription, String right) {
-        return pred("right", Arrays.asList(s("authority"), s("topic"),
-                string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s(right), string(subscription)));
-    }
-
     public Either<Error, Verifier> verifierFromBiscuit(String role) {
         Either<Error, Biscuit> deser = Biscuit.from_sealed(
                 Base64.getUrlDecoder().decode(role.substring("biscuit:".length())),
@@ -120,54 +93,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         if (res.isLeft()) {
             return res;
         }
-
-        Verifier verifier = res.get();
-        /*verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
-                Arrays.asList(pred("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("produce"))))));
-
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
-                Arrays.asList(pred("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("consume"))))));
-
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("lookup")),
-                Arrays.asList(pred("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("consume"), var(3))))));
-
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("produce")),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("produce"))),
-                        pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2)))
-                )));
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("consume")),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("consume"))),
-                        pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2))))));
-
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("consume"), var(3)),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("namespace"), var(0), var(1), s("consume"))),
-                        pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2))),
-                        pred("subscription", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3))))));
-
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("produce")),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("admin"))),
-                        pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2))))));
-
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("consume")),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("admin"))),
-                        pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2))))));
-
-        verifier.add_rule(rule("right", Arrays.asList(s("authority"), s("topic"), var(0), var(1), var(2), s("consume"), var(1)),
-                Arrays.asList(
-                        pred("right", Arrays.asList(s("authority"), s("admin"))),
-                        pred("topic", Arrays.asList(s("ambient"), var(0), var(1), var(2))),
-                        pred("subscription", Arrays.asList(s("ambient"), var(0), var(1), var(2), var(3)))
-                )));
-        */
-
-        //*check_right(#authority, #namespace, $0, $1, $2) <- !ns_operation(#authority, #namespace, $0, $1, $2), right(#authority, #namespace, $0, $1, $2) et `*check_right(#authority, #topic, $0, $1, $2, $3) <- !topic_operation(#authority, #topic, $0, $1, $2, $3), right(#authority, #namespace, $0, $1, $2, $3)
-
-        //log.debug(verifier.print_world());
 
         return Right(verifier);
     }
@@ -244,24 +169,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
         verifier.allow();
-
-        // add these rules because there are two ways to verify that we can consume: with a right defined on the topic
-        // or one defined on the subscription
-        /*verifier.add_rule(rule("can_consume", Arrays.asList(s("authority"), s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
-                Arrays.asList(
-                        topicSubscriptionRight(topicName, subscription, "consume"))));
-
-        verifier.add_rule(rule("can_consume", Arrays.asList(s("authority"), s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())),
-                Arrays.asList(
-                        topicRight(topicName, "consume"))));
-
-        verifier.add_caveat(caveat(rule(
-                "checked_consume_right",
-                Arrays.asList(s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName()), s("consume")),
-                Arrays.asList(
-                        pred("can_consume", Arrays.asList(s("authority"), s("topic"), string(topicName.getTenant()), string(topicName.getNamespacePortion()), string(topicName.getLocalName())))
-                )
-        )));*/
 
         Either verifierResult = verifier.verify();
         log.debug(verifier.print_world());
