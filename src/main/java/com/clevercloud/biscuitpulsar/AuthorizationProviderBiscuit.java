@@ -92,13 +92,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         }
 
         Biscuit token = deser.get();
-        Either<Error, Verifier> res = token.verify_sealed();
-
-        if (res.isLeft()) {
-            return res;
-        }
-
-        return Right(verifier);
+        return token.verify_sealed();
     }
 
     @Override
