@@ -5,19 +5,17 @@
 
 ## Requirements
 
-`biscuit-pulsar` needs protobuf 3.
+`biscuit-pulsar` needs protobuf 3.13.
 
 ## Configuration
 
 The listed dependencies can be necessary to add to the /lib of pulsar folder as jars:
 
-- biscuit-pulsar
-- vavr
-- vavr-match
-- protobuf
-- commons-codec
-- biscuit-java
 - curve25519-elisabeth
+- vavr
+- protobuf
+- biscuit-java
+- biscuit-pulsar
 
 We currently are using this script to put libs on pulsar nodes:
 
@@ -26,8 +24,9 @@ We currently are using this script to put libs on pulsar nodes:
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/cafe/cryptography/curve25519-elisabeth/0.1.0/curve25519-elisabeth-0.1.0.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.3/vavr-0.10.3.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/1.1.1/biscuit-java-1.1.1.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.13.0/protobuf-java-3.13.0.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/<VERSION>/biscuit-java-<VERSION>.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/<VERSION>/biscuit-pulsar-<VERSION>.jar"
 ```
 
 For nodes configuration:
