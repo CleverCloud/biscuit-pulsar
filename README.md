@@ -1,5 +1,7 @@
 # Pulsar Biscuit Authentication & Authorization plugins
 
+[![Tests](https://github.com/clevercloud/biscuit-pulsar/actions/workflows/java_ci.yml/badge.svg)](https://github.com/CleverCloud/biscuit-pulsar/actions/workflows/java_ci.yml)
+
 [![Central Version](https://img.shields.io/maven-central/v/com.clever-cloud/biscuit-pulsar)](https://mvnrepository.com/artifact/com.clever-cloud/biscuit-pulsar)
 [![Nexus Version](https://img.shields.io/nexus/r/com.clever-cloud/biscuit-pulsar?server=https%3A%2F%2Foss.sonatype.org)](https://search.maven.org/artifact/com.clever-cloud/biscuit-pulsar)
 
