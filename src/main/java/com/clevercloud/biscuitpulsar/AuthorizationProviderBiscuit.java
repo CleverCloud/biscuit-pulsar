@@ -1,15 +1,10 @@
 package com.clevercloud.biscuitpulsar;
 
-import com.clevercloud.biscuit.crypto.KeyPair;
-import com.clevercloud.biscuit.datalog.SymbolTable;
+import com.clevercloud.biscuit.datalog.RunLimits;
 import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.Verifier;
-import com.clevercloud.biscuit.token.builder.Block;
-import com.clevercloud.biscuit.token.builder.Fact;
-import com.clevercloud.biscuit.token.builder.Predicate;
 import io.vavr.control.Either;
-import io.vavr.control.Option;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authorization.AuthorizationProvider;
@@ -17,67 +12,45 @@ import org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider;
 import org.apache.pulsar.broker.cache.ConfigurationCacheService;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
-import org.apache.pulsar.common.policies.data.AuthAction;
-import org.apache.pulsar.common.policies.data.NamespaceOperation;
-import org.apache.pulsar.common.policies.data.PolicyName;
-import org.apache.pulsar.common.policies.data.PolicyOperation;
-import org.apache.pulsar.common.policies.data.TenantOperation;
-import org.apache.pulsar.common.policies.data.TopicOperation;
+import org.apache.pulsar.common.policies.data.*;
 import org.apache.pulsar.common.util.FutureUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.Arrays;
+import java.time.Duration;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
-import static com.clevercloud.biscuit.token.builder.Utils.*;
-import static io.vavr.API.*;
+import static io.vavr.API.Left;
 
 public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProviderBiscuit.class);
 
+    final static String CONF_BISCUIT_RUNLIMITS_MAX_FACTS = "biscuitRunLimitsMaxFacts";
+    final static String CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS = "biscuitRunLimitsMaxIterations";
+    final static String CONF_BISCUIT_RUNLIMITS_MAX_TIME = "biscuitRunLimitsMaxTimeMillis";
+
     public ServiceConfiguration conf;
     public ConfigurationCacheService configCache;
     private PulsarAuthorizationProvider defaultProvider;
+    private RunLimits runLimits;
 
     public AuthorizationProviderBiscuit() {
-        warmUp();
+        runLimits = new RunLimits();
     }
 
     public AuthorizationProviderBiscuit(ServiceConfiguration conf, ConfigurationCacheService configCache)
             throws IOException {
         initialize(conf, configCache);
-        warmUp();
-    }
-
-    /**
-     * This method is called when creating new AuthorizationProviderBiscuit to warm up JVM datalog engine and get rid
-     * of timeouts that can occurs during first Verifier.verify()
-     */
-    private void warmUp() {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
-
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        for (int i = 0; i < 1000; i++){
-            Block authority_builder = new Block(0, symbols);
-            authority_builder.add_rule(rule("right",
-                    Arrays.asList(s("authority"), string(tenant), string(namespace), string(topic), s("produce")),
-                    Arrays.asList(pred("topic_operation", Arrays.asList(s("ambient"), string(tenant), string(namespace), string(topic), s("produce"))))));
-            Verifier v = Verifier.make(Biscuit.make(rng, root, symbols, authority_builder.build()).get(), Option.of(root.public_key())).get();
-            v.verify();
-        }
+        runLimits = new RunLimits(
+            Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_FACTS)),
+            Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS)),
+            Duration.ofMillis(Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_TIME)))
+        );
     }
 
     public Either<Error, Verifier> verifierFromBiscuit(String role) {
@@ -121,14 +94,14 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
         verifier.allow();
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit canProduceAsync on [{}] NOT authorized for role [{}]: {}", topicName, role, verifierResult.getLeft());
             return CompletableFuture.completedFuture(false);
         } else {
-            log.debug("Biscuit canProduceAsync on [{}] authorized.", topicName);
+            log.debug("Biscuit canProductAsync on [{}] authorized.", topicName);
             return CompletableFuture.completedFuture(true);
         }
     }
@@ -152,7 +125,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
         verifier.allow();
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
@@ -183,7 +156,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
         verifier.allow();
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
@@ -215,7 +188,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_check("check if right(#authority, #namespace, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #functions)").get();
         verifier.allow();
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
@@ -253,7 +226,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         verifier.add_check("check if right(#authority, #admin)").get();
         verifier.allow();
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
@@ -315,7 +288,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         }
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
@@ -402,7 +375,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return CompletableFuture.failedFuture(new Exception(String.format("Can't find PolicyName [%s] in [%s].", policy, PolicyName.values())));
         }
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.debug("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation, namespaceName, role, verifierResult.getLeft());
@@ -471,7 +444,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.allow();
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
@@ -522,7 +495,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return CompletableFuture.failedFuture(new Exception(String.format("Can't find PolicyName [%s] in [%s].", policy, PolicyName.values())));
         }
 
-        Either verifierResult = verifier.verify();
+        Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
