@@ -53,6 +53,10 @@ biscuitPublicRootKey=@@BISCUIT_PUBLIC_ROOT_KEY@@
 biscuitSealingKey=@@BISCUIT_PUBLIC_SEALING_KEY@@
 # support JWT side by side with Biscuit for AuthenticationToken
 biscuitSupportJWT=true|false
+# biscuit verify run limits before TimeOut
+biscuitRunLimitsMaxFacts=1000
+biscuitRunLimitsMaxIterations=100
+biscuitRunLimitsMaxTimeMillis=30
 ```
 
 ```bash
