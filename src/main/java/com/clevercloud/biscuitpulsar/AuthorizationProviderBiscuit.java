@@ -99,7 +99,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit canProduceAsync on [{}] NOT authorized for role [{}]: {}", topicName, role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authenticationData, this.conf);
         } else {
             log.debug("Biscuit canProductAsync on [{}] authorized.", topicName);
             return CompletableFuture.completedFuture(true);
@@ -130,7 +130,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit canConsumeAsync on [{}] NOT authorized for role [{}]: {}", topicName, role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authenticationData, this.conf);
         } else {
             log.debug("Biscuit canConsumeAsync on [{}] authorized.", topicName);
             return CompletableFuture.completedFuture(true);
@@ -161,7 +161,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit canLookupAsync on [{}] NOT authorized for role [{}]: {}", topicName, role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authenticationData, this.conf);
         } else {
             log.debug("Biscuit canLookupAsync on [{}] authorized.", topicName);
             return CompletableFuture.completedFuture(true);
@@ -193,7 +193,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit allowFunctionOpsAsync on [{}] NOT authorized for role [{}]: {}", namespaceName, role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authenticationData, this.conf);
         } else {
             log.debug("Biscuit allowFunctionOpsAsync on [{}] authorized.", namespaceName);
             return CompletableFuture.completedFuture(true);
@@ -244,13 +244,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             return defaultProvider.allowTenantOperationAsync(tenantName, role, operation, authData);
         }
 
-        return isSuperUser(role, authData, conf).thenCompose(isSuperUser -> {
-            if (isSuperUser) {
-                return CompletableFuture.completedFuture(true);
-            } else {
-                return FutureUtil.failedFuture(new IllegalStateException("allowTenantOperationAsync is not implemented for biscuit."));
-            }
-        });
+        return isSuperUser(role, authData, this.conf);
     }
 
     @Override
@@ -293,7 +287,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit allowNamespaceOperationAsync [{}] on [{}] NOT authorized for role [{}]: {}", operation.toString(), namespaceName, role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authData, this.conf);
         } else {
             log.debug("Biscuit allowNamespaceOperationAsync [{}] on [{}] authorized.", operation.toString(), namespaceName);
             return CompletableFuture.completedFuture(true);
@@ -379,7 +373,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         log.debug(verifier.print_world());
         if (verifierResult.isLeft()) {
             log.debug("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation, namespaceName, role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authData, this.conf);
         } else {
             log.debug("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] authorized.", policy.toString(), operation, namespaceName);
             return CompletableFuture.completedFuture(true);
@@ -449,7 +443,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit allowTopicOperationAsync [{}] on [{}] NOT authorized for role [{}]: {}", operation, topicName, role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authData, this.conf);
         } else {
             log.debug("Biscuit allowTopicOperationAsync [{}] on [{}] authorized.", operation, topicName);
             return CompletableFuture.completedFuture(true);
@@ -500,7 +494,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         if (verifierResult.isLeft()) {
             log.debug("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation, topicName.getNamespacePortion(), role, verifierResult.getLeft());
-            return CompletableFuture.completedFuture(false);
+            return isSuperUser(role, authData, this.conf);
         } else {
             log.debug("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] authorized.", policy.toString(), operation, topicName.getNamespacePortion());
             return CompletableFuture.completedFuture(true);
