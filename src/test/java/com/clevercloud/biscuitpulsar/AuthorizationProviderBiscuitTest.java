@@ -490,6 +490,7 @@ public class AuthorizationProviderBiscuitTest {
 
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         assertTrue(authorizationProvider.isSuperUser(authedBiscuit, null, conf).get());
+        assertTrue(authorizationProvider.allowNamespacePolicyOperation(NamespaceName.get("randomTenant/randomNamespace"), PolicyName.REPLICATION, PolicyOperation.WRITE,  authedBiscuit, null));
     }
 
     @Test
