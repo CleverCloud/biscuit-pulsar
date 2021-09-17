@@ -339,7 +339,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
                             "#max_unacked_read, "+
                             "#max_unacked_write, "+
                             "#offload_read, "+
-                            "#offload_write" +
+                            "#offload_write, " +
                             "#persistence_read, "+
                             "#persistence_write, "+
                             "#rate_write, "+
