@@ -9,11 +9,10 @@ import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authorization.AuthorizationProvider;
 import org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider;
-import org.apache.pulsar.broker.cache.ConfigurationCacheService;
+import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.common.policies.data.*;
-import org.apache.pulsar.common.util.FutureUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +34,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     final static String CONF_BISCUIT_RUNLIMITS_MAX_TIME = "biscuitRunLimitsMaxTimeMillis";
 
     public ServiceConfiguration conf;
-    public ConfigurationCacheService configCache;
+    public PulsarResources pulsarResources;
     private PulsarAuthorizationProvider defaultProvider;
     private RunLimits runLimits;
 
@@ -43,9 +42,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         runLimits = new RunLimits();
     }
 
-    public AuthorizationProviderBiscuit(ServiceConfiguration conf, ConfigurationCacheService configCache)
+    public AuthorizationProviderBiscuit(ServiceConfiguration conf, PulsarResources pulsarResources)
             throws IOException {
-        initialize(conf, configCache);
+        initialize(conf, pulsarResources);
         runLimits = new RunLimits(
             Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_FACTS)),
             Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS)),
@@ -69,10 +68,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public void initialize(ServiceConfiguration conf, ConfigurationCacheService configCache) throws IOException {
+    public void initialize(ServiceConfiguration conf, PulsarResources pulsarResources) throws IOException {
         this.conf = conf;
-        this.configCache = configCache;
-        defaultProvider = new PulsarAuthorizationProvider(conf, configCache);
+        this.pulsarResources = pulsarResources;
+        defaultProvider = new PulsarAuthorizationProvider(conf, pulsarResources );
     }
 
     @Override
