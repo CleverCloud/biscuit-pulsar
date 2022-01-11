@@ -22,11 +22,11 @@
     <nexus-staging-maven.version>1.6.7</nexus-staging-maven.version>
 
     <!-- dependencies -->
-    <biscuit-java.version>1.1.2</biscuit-java.version>
-    <logback-classic.version>1.2.3</logback-classic.version>
+    <biscuit-java.version>1.1.4</biscuit-java.version>
+    <logback-classic.version>1.2.10</logback-classic.version>
     <protobuf.version>3.16.1</protobuf.version>
-    <pulsar.version>2.8.0</pulsar.version>
-    <slf4j-api.version>1.7.29</slf4j-api.version>
+    <pulsar.version>2.9.1</pulsar.version>
+    <slf4j-api.version>1.7.32</slf4j-api.version>
     <vavr.version>0.10.2</vavr.version>
 
     <!-- test dependencies -->
