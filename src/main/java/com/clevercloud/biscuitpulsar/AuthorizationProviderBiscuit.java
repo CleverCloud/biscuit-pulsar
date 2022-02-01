@@ -289,7 +289,6 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-
         verifier.add_fact(namespaceFact(namespaceName)).get();
         verifier.add_fact(namespacePolicyOperationFact(namespaceName, policy, operation)).get();
         verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " + policiesOperations + ".contains($operation)").get();
