@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.*;
 import static io.vavr.API.Left;
 
 public class AuthorizationProviderBiscuit implements AuthorizationProvider {
@@ -271,8 +272,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             // what about operations get_permission, grant_permission and revoke_permission?
             verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
                     "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
-                    "[ #create_topic, #get_topic, #get_topics, #delete_topic, #add_bundle, #delete_bundle, " +
-                    "#get_bundle, #clear_backlog, #unsubscribe ].contains($operation)").get();
+                    namespaceOperations + ".contains($operation)").get();
 
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
             verifier.add_check("check if right(#authority, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\", #" + operationName.get().toString().toLowerCase() + ")").get();
@@ -318,46 +318,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             ).get();
             verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
                     "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
-                    "[ " +
-                    "#all_read, " +
-                    //"#all_write"
-                    //"#anty_affinity_write"
-                    "#anty_affinity_read, " +
-                    "#backlog_read, " +
-                    "#backlog_write, " +
-                    "#compaction_read, " +
-                    "#compaction_write, " +
-                    "#delayed_delivery_read, " +
-                    "#delayed_delivery_write, " +
-                    "#deduplication_read, " +
-                    "#deduplication_write, " +
-                    "#max_consumers_read, " +
-                    "#max_consumers_write, " +
-                    "#max_producers_read, " +
-                    "#max_producers_write, " +
-                    "#max_unacked_read, " +
-                    "#max_unacked_write, " +
-                    "#offload_read, " +
-                    //"#offload_write, " +
-                    "#persistence_read, " +
-                    "#persistence_write, " +
-                    "#rate_write, " +
-                    "#rate_read, " +
-                    "#retention_read, " +
-                    "#retention_write, " +
-                    "#replication_read, " +
-                    //"#replication_write"
-                    "#replication_rate_read, " +
-                    //"#replication_rate_write"
-                    "#schema_compatibility_strategy_read, " +
-                    "#schema_compatibility_strategy_write, " +
-                    "#subscription_auth_mode_read, " +
-                    "#subscription_auth_mode_write, " +
-                    "#encryption_read, " +
-                    "#encryption_write, " +
-                    "#ttl_read, " +
-                    "#ttl_write "
-                    + "].contains($operation)").get();
+                    policiesOperations + ".contains($operation)").get();
 
 
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
@@ -405,29 +366,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, $operation) <- " +
                 "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, $operation)," +
-                "[" +
-                "#lookup, " +
-                "#produce, " +
-                "#consume, " +
-                "#compact, " +
-                "#expire_messages, " +
-                "#offload, " +
-                "#peek_messages, " +
-                "#reset_cursor, " +
-                "#skip, " +
-                "#terminate, " +
-                //"unload",
-                //"grant_permission",
-                //"get_permission",
-                //"revoke_permission",
-                //"add_bundle_range",
-                //"get_bundle_range",
-                //"delete_bundle_range",
-                "#subscribe, " +
-                "#get_subscriptions, " +
-                "#unsubscribe, " +
-                "#get_stats" +
-                " ].contains($operation)").get();
+                topicOperations + ".contains($operation)").get();
 
         verifier.add_check("check if right( #authority, \"" +
                 topicName.getTenant() + "\", \"" +
@@ -475,7 +414,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             ).get();
             verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
                     "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
-                    "[#partition_read, #partition_write].contains($operation)"
+                    policiesOperations + ".contains($operation)"
             ).get();
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
             verifier.add_check("check if right( #authority, \"" +

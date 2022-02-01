@@ -1,0 +1,34 @@
+package com.clevercloud.biscuitpulsar.operation;
+
+public enum BiscuitTopicOperation {
+    LOOKUP,
+    PRODUCE,
+    CONSUME,
+
+    COMPACT,
+    EXPIRE_MESSAGES,
+    OFFLOAD,
+    PEEK_MESSAGES,
+    RESET_CURSOR,
+    SKIP,
+    TERMINATE,
+    //UNLOAD,
+
+    //GRANT_PERMISSION,
+    //GET_PERMISSION,
+    //REVOKE_PERMISSION,
+
+    //ADD_BUNDLE_RANGE,
+    //GET_BUNDLE_RANGE,
+    //DELETE_BUNDLE_RANGE,
+
+    SUBSCRIBE,
+    GET_SUBSCRIPTIONS,
+    UNSUBSCRIBE,
+
+    GET_STATS,
+    GET_METADATA,
+    GET_BACKLOG_SIZE,
+
+    SET_REPLICATED_SUBSCRIPTION_STATUS,
+}
