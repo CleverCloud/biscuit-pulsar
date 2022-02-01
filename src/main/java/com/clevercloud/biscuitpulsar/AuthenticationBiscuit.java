@@ -56,7 +56,7 @@ public class AuthenticationBiscuit implements Authentication, EncodedAuthenticat
             URI filePath = URI.create(encodedAuthParamString);
             this.biscuitSupplier = () -> {
                 try {
-                    return new String(Files.readAllBytes(Paths.get(filePath)), Charsets.UTF_8).trim();
+                    return Files.readString(Paths.get(filePath), Charsets.UTF_8).trim();
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to read biscuit from file", e);
                 }
