@@ -46,9 +46,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             throws IOException {
         initialize(conf, pulsarResources);
         runLimits = new RunLimits(
-            Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_FACTS)),
-            Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS)),
-            Duration.ofMillis(Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_TIME)))
+                Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_FACTS)),
+                Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS)),
+                Duration.ofMillis(Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_TIME)))
         );
     }
 
@@ -71,7 +71,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     public void initialize(ServiceConfiguration conf, PulsarResources pulsarResources) throws IOException {
         this.conf = conf;
         this.pulsarResources = pulsarResources;
-        defaultProvider = new PulsarAuthorizationProvider(conf, pulsarResources );
+        defaultProvider = new PulsarAuthorizationProvider(conf, pulsarResources);
     }
 
     @Override
@@ -87,10 +87,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
-        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
+        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
+        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #produce)").get();
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #produce) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #produce)").get();
-        verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
+        verifier.add_check("check if right(#authority, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #produce)").get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -118,10 +118,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
-        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
+        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
+        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #consume)").get();
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #consume) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #consume)").get();
-        verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
+        verifier.add_check("check if right(#authority, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #consume)").get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -149,10 +149,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
-        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
+        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
+        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #lookup)").get();
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #lookup) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #lookup)").get();
-        verifier.add_check("check if right(#authority, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #lookup)").get();
+        verifier.add_check("check if right(#authority, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #lookup)").get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -181,10 +181,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("namespace(#ambient, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\")").get();
+        verifier.add_fact("namespace(#ambient, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\")").get();
         verifier.add_operation("functions");
         // should we have #namespace here? why not have #topic for topic rights to be coherent?
-        verifier.add_check("check if right(#authority, #namespace, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #functions)").get();
+        verifier.add_check("check if right(#authority, #namespace, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\", #functions)").get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -262,20 +262,20 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
         if (operationName.isPresent()) {
-            verifier.add_fact("namespace(#ambient, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\")").get();
-            verifier.add_fact("namespace_operation(#ambient, \""+
-                    namespaceName.getTenant()+
-                    "\", \"" + namespaceName.getLocalName()+
-                    "\", #"+operationName.get().toString().toLowerCase()+")").get();
+            verifier.add_fact("namespace(#ambient, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\")").get();
+            verifier.add_fact("namespace_operation(#ambient, \"" +
+                    namespaceName.getTenant() +
+                    "\", \"" + namespaceName.getLocalName() +
+                    "\", #" + operationName.get().toString().toLowerCase() + ")").get();
 
             // what about operations get_permission, grant_permission and revoke_permission?
             verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
                     "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
                     "[ #create_topic, #get_topic, #get_topics, #delete_topic, #add_bundle, #delete_bundle, " +
-                      "#get_bundle, #clear_backlog, #unsubscribe ].contains($operation)").get();
+                    "#get_bundle, #clear_backlog, #unsubscribe ].contains($operation)").get();
 
             // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_check("check if right(#authority, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #" + operationName.get().toString().toLowerCase() + ")").get();
+            verifier.add_check("check if right(#authority, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\", #" + operationName.get().toString().toLowerCase() + ")").get();
             verifier.allow();
         } else {
 
@@ -309,59 +309,59 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
         if (policyName.isPresent()) {
-            verifier.add_fact("namespace(#ambient, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\")").get();
+            verifier.add_fact("namespace(#ambient, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\")").get();
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact("namespace_operation(#ambient, \""+ namespaceName.getTenant() +
-                "\", \"" + namespaceName.getLocalName() +
-                "\", #"+policyName.get().toString().toLowerCase() +
-                "_" + operation.toString().toLowerCase()+")"
+            verifier.add_fact("namespace_operation(#ambient, \"" + namespaceName.getTenant() +
+                    "\", \"" + namespaceName.getLocalName() +
+                    "\", #" + policyName.get().toString().toLowerCase() +
+                    "_" + operation.toString().toLowerCase() + ")"
             ).get();
             verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
                     "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
-                    "[ "+
-                            "#all_read, "+
-                            //"#all_write"
-                            //"#anty_affinity_write"
-                            "#anty_affinity_read, "+
-                            "#backlog_read, "+
-                            "#backlog_write, "+
-                            "#compaction_read, "+
-                            "#compaction_write, "+
-                            "#delayed_delivery_read, "+
-                            "#delayed_delivery_write, "+
-                            "#deduplication_read, "+
-                            "#deduplication_write, "+
-                            "#max_consumers_read, "+
-                            "#max_consumers_write, "+
-                            "#max_producers_read, "+
-                            "#max_producers_write, "+
-                            "#max_unacked_read, "+
-                            "#max_unacked_write, "+
-                            "#offload_read, "+
-                            //"#offload_write, " +
-                            "#persistence_read, "+
-                            "#persistence_write, "+
-                            "#rate_write, "+
-                            "#rate_read, "+
-                            "#retention_read, "+
-                            "#retention_write, "+
-                            "#replication_read, "+
-                            //"#replication_write"
-                            "#replication_rate_read, "+
-                            //"#replication_rate_write"
-                            "#schema_compatibility_strategy_read, "+
-                            "#schema_compatibility_strategy_write, "+
-                            "#subscription_auth_mode_read, "+
-                            "#subscription_auth_mode_write, "+
-                            "#encryption_read, "+
-                            "#encryption_write, "+
-                            "#ttl_read, "+
-                            "#ttl_write "
-                                    +"].contains($operation)").get();
+                    "[ " +
+                    "#all_read, " +
+                    //"#all_write"
+                    //"#anty_affinity_write"
+                    "#anty_affinity_read, " +
+                    "#backlog_read, " +
+                    "#backlog_write, " +
+                    "#compaction_read, " +
+                    "#compaction_write, " +
+                    "#delayed_delivery_read, " +
+                    "#delayed_delivery_write, " +
+                    "#deduplication_read, " +
+                    "#deduplication_write, " +
+                    "#max_consumers_read, " +
+                    "#max_consumers_write, " +
+                    "#max_producers_read, " +
+                    "#max_producers_write, " +
+                    "#max_unacked_read, " +
+                    "#max_unacked_write, " +
+                    "#offload_read, " +
+                    //"#offload_write, " +
+                    "#persistence_read, " +
+                    "#persistence_write, " +
+                    "#rate_write, " +
+                    "#rate_read, " +
+                    "#retention_read, " +
+                    "#retention_write, " +
+                    "#replication_read, " +
+                    //"#replication_write"
+                    "#replication_rate_read, " +
+                    //"#replication_rate_write"
+                    "#schema_compatibility_strategy_read, " +
+                    "#schema_compatibility_strategy_write, " +
+                    "#subscription_auth_mode_read, " +
+                    "#subscription_auth_mode_write, " +
+                    "#encryption_read, " +
+                    "#encryption_write, " +
+                    "#ttl_read, " +
+                    "#ttl_write "
+                    + "].contains($operation)").get();
 
 
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_check("check if right(#authority, \""+namespaceName.getTenant()+"\", \""+namespaceName.getLocalName()+"\", #"+policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()+")").get();
+            verifier.add_check("check if right(#authority, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\", #" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase() + ")").get();
             verifier.allow();
 
         } else {
@@ -394,46 +394,46 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\")").get();
-        verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #"+operation.toString().toLowerCase()+")").get();
+        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
+        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #" + operation.toString().toLowerCase() + ")").get();
 
         // if produce|consume right is authorized then we authorize lookup
         if (operation.equals(TopicOperation.LOOKUP)) {
-            verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #consume)").get();
-            verifier.add_fact("topic_operation(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\", \""+topicName.getLocalName()+"\", #produce)").get();
+            verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #consume)").get();
+            verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #produce)").get();
         }
 
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, $operation) <- " +
                 "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, $operation)," +
                 "[" +
-                    "#lookup, "+
-                    "#produce, "+
-                    "#consume, "+
-                    "#compact, "+
-                    "#expire_messages, "+
-                    "#offload, "+
-                    "#peek_messages, "+
-                    "#reset_cursor, "+
-                    "#skip, "+
-                    "#terminate, "+
-                    //"unload",
-                    //"grant_permission",
-                    //"get_permission",
-                    //"revoke_permission",
-                    //"add_bundle_range",
-                    //"get_bundle_range",
-                    //"delete_bundle_range",
-                    "#subscribe, "+
-                    "#get_subscriptions, "+
-                    "#unsubscribe, "+
-                    "#get_stats"+
+                "#lookup, " +
+                "#produce, " +
+                "#consume, " +
+                "#compact, " +
+                "#expire_messages, " +
+                "#offload, " +
+                "#peek_messages, " +
+                "#reset_cursor, " +
+                "#skip, " +
+                "#terminate, " +
+                //"unload",
+                //"grant_permission",
+                //"get_permission",
+                //"revoke_permission",
+                //"add_bundle_range",
+                //"get_bundle_range",
+                //"delete_bundle_range",
+                "#subscribe, " +
+                "#get_subscriptions, " +
+                "#unsubscribe, " +
+                "#get_stats" +
                 " ].contains($operation)").get();
 
-        verifier.add_check("check if right( #authority, \""+
-                        topicName.getTenant()+"\", \""+
-                        topicName.getNamespacePortion()+"\", \""+
-                        topicName.getLocalName()+
-                        "\", #"+operation.toString().toLowerCase()+")").get();
+        verifier.add_check("check if right( #authority, \"" +
+                topicName.getTenant() + "\", \"" +
+                topicName.getNamespacePortion() + "\", \"" +
+                topicName.getLocalName() +
+                "\", #" + operation.toString().toLowerCase() + ")").get();
 
         verifier.allow();
 
@@ -465,23 +465,23 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
         if (policyName.isPresent()) {
-            verifier.add_fact("namespace(#ambient, \""+topicName.getTenant()+"\", \""+topicName.getNamespacePortion()+"\")").get();
+            verifier.add_fact("namespace(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\")").get();
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
             verifier.add_fact("namespace_operation(#ambient, \"" +
                     topicName.getTenant() +
                     "\", \"" + topicName.getNamespacePortion() +
-                    "\", #"+policyName.get().toString().toLowerCase() +
-                    "_" + operation.toString().toLowerCase()+")"
+                    "\", #" + policyName.get().toString().toLowerCase() +
+                    "_" + operation.toString().toLowerCase() + ")"
             ).get();
             verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
                     "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
                     "[#partition_read, #partition_write].contains($operation)"
             ).get();
             // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_check("check if right( #authority, \""+
-                    topicName.getTenant()+"\", \""+
-                    topicName.getNamespacePortion()+
-                    "\",  #"+policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase()+")").get();
+            verifier.add_check("check if right( #authority, \"" +
+                    topicName.getTenant() + "\", \"" +
+                    topicName.getNamespacePortion() +
+                    "\",  #" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase() + ")").get();
 
             verifier.allow();
         } else {
