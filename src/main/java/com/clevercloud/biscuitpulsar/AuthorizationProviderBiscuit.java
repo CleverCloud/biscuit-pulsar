@@ -19,10 +19,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.*;
 import static io.vavr.API.Left;
@@ -88,10 +86,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
-        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #produce)").get();
+        verifier.add_fact(topicFact(topicName)).get();
+        verifier.add_fact(topicOperationFact(topicName, TopicOperation.PRODUCE)).get();
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #produce) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #produce)").get();
-        verifier.add_check("check if right(#authority, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #produce)").get();
+        verifier.add_check("check if right(#authority," + topicFactFragment(topicName) + "," + topicOperationSymbol(TopicOperation.PRODUCE)).get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -119,10 +117,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
-        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #consume)").get();
+        verifier.add_fact(topicFact(topicName)).get();
+        verifier.add_fact(topicOperationFact(topicName, TopicOperation.CONSUME)).get();
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #consume) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #consume)").get();
-        verifier.add_check("check if right(#authority, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #consume)").get();
+        verifier.add_check("check if right(#authority," + topicFactFragment(topicName) + "," + topicOperationSymbol(TopicOperation.CONSUME)).get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -150,10 +148,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
-        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #lookup)").get();
+        verifier.add_fact(topicFact(topicName)).get();
+        verifier.add_fact(topicOperationFact(topicName, TopicOperation.LOOKUP)).get();
         verifier.add_rule("right(#authority, $tenant, $namespace, $topic, #lookup) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, #lookup)").get();
-        verifier.add_check("check if right(#authority, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #lookup)").get();
+        verifier.add_check("check if right(#authority," + topicFactFragment(topicName) + "," + topicOperationSymbol(TopicOperation.LOOKUP)).get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -182,10 +180,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("namespace(#ambient, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\")").get();
+        verifier.add_fact(namespaceFact(namespaceName)).get();
         verifier.add_operation("functions");
         // should we have #namespace here? why not have #topic for topic rights to be coherent?
-        verifier.add_check("check if right(#authority, #namespace, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\", #functions)").get();
+        verifier.add_check("check if right(#authority, #namespace," + namespaceFactFragment(namespaceName) + ",#functions)").get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -260,35 +258,20 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-
-        Optional<NamespaceOperation> operationName = Stream.of(NamespaceOperation.values()).filter(e -> e == operation).findFirst();
-        if (operationName.isPresent()) {
-            verifier.add_fact("namespace(#ambient, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\")").get();
-            verifier.add_fact("namespace_operation(#ambient, \"" +
-                    namespaceName.getTenant() +
-                    "\", \"" + namespaceName.getLocalName() +
-                    "\", #" + operationName.get().toString().toLowerCase() + ")").get();
-
-            // what about operations get_permission, grant_permission and revoke_permission?
-            verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
-                    "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
-                    namespaceOperations + ".contains($operation)").get();
-
-            // NamespaceOperation CREATE_TOPIC returns operation "create_topic"
-            verifier.add_check("check if right(#authority, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\", #" + operationName.get().toString().toLowerCase() + ")").get();
-            verifier.allow();
-        } else {
-
-        }
+        verifier.add_fact(namespaceFact(namespaceName)).get();
+        verifier.add_fact(namespaceOperationFact(namespaceName, operation)).get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " + namespaceOperations + ".contains($operation)").get();
+        verifier.add_check("check if right(#authority," + namespaceFactFragment(namespaceName) + "," + namespaceOperationSymbol(operation) + ")").get();
+        verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
-            log.debug("Biscuit allowNamespaceOperationAsync [{}] on [{}] NOT authorized for role [{}]: {}", operation.toString(), namespaceName, role, verifierResult.getLeft());
+            log.debug("Biscuit allowNamespaceOperationAsync [{}] on [{}] NOT authorized for role [{}]: {}", operation, namespaceName, role, verifierResult.getLeft());
             return isSuperUser(role, authData, this.conf);
         } else {
-            log.debug("Biscuit allowNamespaceOperationAsync [{}] on [{}] authorized.", operation.toString(), namespaceName);
+            log.debug("Biscuit allowNamespaceOperationAsync [{}] on [{}] authorized.", operation, namespaceName);
             return CompletableFuture.completedFuture(true);
         }
     }
@@ -307,35 +290,20 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         Verifier verifier = res.get();
         verifier.set_time();
 
-        Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
-        if (policyName.isPresent()) {
-            verifier.add_fact("namespace(#ambient, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\")").get();
-            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact("namespace_operation(#ambient, \"" + namespaceName.getTenant() +
-                    "\", \"" + namespaceName.getLocalName() +
-                    "\", #" + policyName.get().toString().toLowerCase() +
-                    "_" + operation.toString().toLowerCase() + ")"
-            ).get();
-            verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
-                    "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
-                    policiesOperations + ".contains($operation)").get();
-
-
-            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_check("check if right(#authority, \"" + namespaceName.getTenant() + "\", \"" + namespaceName.getLocalName() + "\", #" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase() + ")").get();
-            verifier.allow();
-
-        } else {
-            return CompletableFuture.failedFuture(new Exception(String.format("Can't find PolicyName [%s] in [%s].", policy, PolicyName.values())));
-        }
+        verifier.add_fact(namespaceFact(namespaceName)).get();
+        verifier.add_fact(namespacePolicyOperationFact(namespaceName, policy, operation)).get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " + policiesOperations + ".contains($operation)").get();
+        verifier.add_check("check if right(#authority," + namespaceFactFragment(namespaceName) + "," + policyOperationFact(policy, operation) + ")").get();
+        verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
+
         if (verifierResult.isLeft()) {
-            log.debug("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation, namespaceName, role, verifierResult.getLeft());
+            log.debug("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy, operation, namespaceName, role, verifierResult.getLeft());
             return isSuperUser(role, authData, this.conf);
         } else {
-            log.debug("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] authorized.", policy.toString(), operation, namespaceName);
+            log.debug("Biscuit allowNamespacePolicyOperationAsync [{}]:[{}] on [{}] authorized.", policy, operation, namespaceName);
             return CompletableFuture.completedFuture(true);
         }
     }
@@ -355,25 +323,17 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-        verifier.add_fact("topic(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\")").get();
-        verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #" + operation.toString().toLowerCase() + ")").get();
+        verifier.add_fact(topicFact(topicName)).get();
+        verifier.add_fact(topicOperationFact(topicName, operation)).get();
 
         // if produce|consume right is authorized then we authorize lookup
         if (operation.equals(TopicOperation.LOOKUP)) {
-            verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #consume)").get();
-            verifier.add_fact("topic_operation(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\", \"" + topicName.getLocalName() + "\", #produce)").get();
+            verifier.add_fact(topicOperationFact(topicName, TopicOperation.PRODUCE)).get();
+            verifier.add_fact(topicOperationFact(topicName, TopicOperation.CONSUME)).get();
         }
 
-        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, $operation) <- " +
-                "right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, $operation)," +
-                topicOperations + ".contains($operation)").get();
-
-        verifier.add_check("check if right( #authority, \"" +
-                topicName.getTenant() + "\", \"" +
-                topicName.getNamespacePortion() + "\", \"" +
-                topicName.getLocalName() +
-                "\", #" + operation.toString().toLowerCase() + ")").get();
-
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, $operation) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, $operation)," + topicOperations + ".contains($operation)").get();
+        verifier.add_check("check if right( #authority," + topicFactFragment(topicName) + "," + topicOperationSymbol(operation) + ")").get();
         verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
@@ -401,40 +361,20 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
         Verifier verifier = res.get();
         verifier.set_time();
-
-        Optional<PolicyName> policyName = Stream.of(PolicyName.values()).filter(e -> e == policy).findFirst();
-        if (policyName.isPresent()) {
-            verifier.add_fact("namespace(#ambient, \"" + topicName.getTenant() + "\", \"" + topicName.getNamespacePortion() + "\")").get();
-            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_fact("namespace_operation(#ambient, \"" +
-                    topicName.getTenant() +
-                    "\", \"" + topicName.getNamespacePortion() +
-                    "\", #" + policyName.get().toString().toLowerCase() +
-                    "_" + operation.toString().toLowerCase() + ")"
-            ).get();
-            verifier.add_rule("right(#authority, $tenant, $namespace, $operation) <- " +
-                    "right(#authority, #admin), namespace_operation(#ambient, $tenant, $namespace, $operation), " +
-                    policiesOperations + ".contains($operation)"
-            ).get();
-            // PolicyName OFFLOAD, operation READ returns operation "offload_read"
-            verifier.add_check("check if right( #authority, \"" +
-                    topicName.getTenant() + "\", \"" +
-                    topicName.getNamespacePortion() +
-                    "\",  #" + policyName.get().toString().toLowerCase() + "_" + operation.toString().toLowerCase() + ")").get();
-
-            verifier.allow();
-        } else {
-            return CompletableFuture.failedFuture(new Exception(String.format("Can't find PolicyName [%s] in [%s].", policy, PolicyName.values())));
-        }
+        verifier.add_fact(topicFact(topicName)).get();
+        verifier.add_fact(topicPolicyOperationFact(topicName, policy, operation)).get();
+        verifier.add_rule("right(#authority, $tenant, $namespace, $topic, $operation) <- right(#authority, #admin), topic_operation(#ambient, $tenant, $namespace, $topic, $operation), " + policiesOperations + ".contains($operation)").get();
+        verifier.add_check("check if right(#authority," + topicFactFragment(topicName) + "," + policyOperationFact(policy, operation) + ")").get();
+        verifier.allow();
 
         Either verifierResult = verifier.verify(runLimits);
         log.debug(verifier.print_world());
 
         if (verifierResult.isLeft()) {
-            log.debug("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy.toString(), operation, topicName.getNamespacePortion(), role, verifierResult.getLeft());
+            log.debug("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] NOT authorized for role [{}]: {}", policy, operation, topicName, role, verifierResult.getLeft());
             return isSuperUser(role, authData, this.conf);
         } else {
-            log.debug("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] authorized.", policy.toString(), operation, topicName.getNamespacePortion());
+            log.debug("Biscuit allowTopicPolicyOperationAsync [{}]:[{}] on [{}] authorized.", policy, operation, topicName);
             return CompletableFuture.completedFuture(true);
         }
     }

@@ -5,8 +5,10 @@ import com.clevercloud.biscuitpulsar.operation.BiscuitPolicyOperation;
 import com.clevercloud.biscuitpulsar.operation.BiscuitTopicOperation;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
+import org.apache.pulsar.common.policies.data.NamespaceOperation;
 import org.apache.pulsar.common.policies.data.PolicyName;
 import org.apache.pulsar.common.policies.data.PolicyOperation;
+import org.apache.pulsar.common.policies.data.TopicOperation;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -53,13 +55,11 @@ public class BiscuitFormatter {
 
     public static String topicFactFragment(TopicName topic) {
         return Stream.of(topic.getTenant(), topic.getNamespacePortion(), topic.getLocalName())
-                .map(String::toLowerCase)
                 .collect(Collectors.joining("\",\"", "\"", "\""));
     }
 
     public static String namespaceFactFragment(NamespaceName namespace) {
         return Stream.of(namespace.getTenant(), namespace.getLocalName())
-                .map(String::toLowerCase)
                 .collect(Collectors.joining("\",\"", "\"", "\""));
     }
 
@@ -67,11 +67,36 @@ public class BiscuitFormatter {
         return "#" + policy.toString().toLowerCase() + "_" + operation.toString().toLowerCase();
     }
 
-    public static String namespaceOperationFact(NamespaceName namespace, PolicyName policy, PolicyOperation operation) {
+    public static String topicOperationSymbol(TopicOperation operation) {
+        return "#" + operation.toString().toLowerCase();
+    }
+
+    public
+    static String namespaceOperationSymbol(NamespaceOperation operation) {
+        return "#" + operation.toString().toLowerCase();
+    }
+
+    public static String namespacePolicyOperationFact(NamespaceName namespace, PolicyName policy, PolicyOperation operation) {
         return "namespace_operation(#ambient," + namespaceFactFragment(namespace) + "," + policyOperationFact(policy, operation) + ")";
     }
 
-    public static String topicOperationFact(TopicName topic, PolicyName policy, PolicyOperation operation) {
+    public static String namespaceOperationFact(NamespaceName namespace, NamespaceOperation operation) {
+        return "namespace_operation(#ambient," + namespaceFactFragment(namespace) + "," + namespaceOperationSymbol(operation) + ")";
+    }
+
+    public static String topicOperationFact(TopicName topic, TopicOperation operation) {
+        return "topic_operation(#ambient," + topicFactFragment(topic) + "," + topicOperationSymbol(operation) + ")";
+    }
+
+    public static String topicPolicyOperationFact(TopicName topic, PolicyName policy, PolicyOperation operation) {
         return "topic_operation(#ambient," + topicFactFragment(topic) + "," + policyOperationFact(policy, operation) + ")";
+    }
+
+    public static String topicFact(TopicName topic) {
+        return "topic(#ambient," + topicFactFragment(topic) + ")";
+    }
+
+    public static String namespaceFact(NamespaceName namespace) {
+        return "namespace(#ambient," + namespaceFactFragment(namespace) + ")";
     }
 }

@@ -26,8 +26,7 @@ public class BiscuitFormatterTest {
 
     @Test
     public void testNamespaceOperationFact() {
-        String nsFact = namespaceOperationFact(NamespaceName.get("tenant/namespace"), PolicyName.COMPACTION, PolicyOperation.WRITE);
-        System.out.println(nsFact);
-        //assertEquals("[#create_topic,#get_topic,#get_topics,#delete_topic,#clear_backlog,#unsubscribe]", namespaceOperations);
+        String nsFact = namespacePolicyOperationFact(NamespaceName.get("tenant/namespace"), PolicyName.COMPACTION, PolicyOperation.WRITE);
+        assertEquals("namespace_operation(#ambient,\"tenant\",\"namespace\",#compaction_write)", nsFact);
     }
 }
