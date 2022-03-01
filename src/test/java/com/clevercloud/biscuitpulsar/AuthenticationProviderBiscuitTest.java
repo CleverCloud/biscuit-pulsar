@@ -31,7 +31,7 @@ public class AuthenticationProviderBiscuitTest {
         LOGGER.info(root.toHex());
 
         LOGGER.info("ROOT PUBLICKEY");
-        LOGGER.info(hex(root.public_key().key.compress().toByteArray()));
+        LOGGER.info(hex(root.public_key().key.getAbyte()));
 
         SymbolTable symbols = Biscuit.default_symbol_table();
 
@@ -40,19 +40,18 @@ public class AuthenticationProviderBiscuitTest {
 
         byte[] seed = {0, 0, 0, 0};
         SecureRandom rng = new SecureRandom(seed);
-        Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build()).get();
+        Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build());
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
 
         Properties properties = new Properties();
-        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.compress().toByteArray()));
-        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_SEALING_KEY, "test");
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
 
         ServiceConfiguration conf = new ServiceConfiguration();
         conf.setProperties(properties);
         provider.initialize(conf);
 
-        String biscuit = b.serialize_b64().get();
+        String biscuit = b.serialize_b64url();
 
         String subject = provider.authenticate(new AuthenticationDataSource() {
             @Override
