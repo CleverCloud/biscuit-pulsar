@@ -1,9 +1,9 @@
 package com.clevercloud.biscuitpulsar;
 
+import biscuit.format.schema.Schema;
 import com.clevercloud.biscuit.crypto.PublicKey;
 import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
-import io.vavr.control.Either;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
-import java.util.Base64;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 
 public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationProviderBiscuit.class);
@@ -24,12 +26,10 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
     final static String BISCUIT = "token";
 
-    final static String CONF_BISCUIT_SEALING_KEY = "biscuitSealingKey";
     final static String CONF_BISCUIT_PUBLIC_ROOT_KEY = "biscuitPublicRootKey";
     final static String CONF_BISCUIT_SUPPORT_JWT = "biscuitSupportJWT";
 
-    private PublicKey rootKey;
-    static String SEALING_KEY;
+    static PublicKey rootKey;
 
     private AuthenticationProviderToken jwtAuthenticator;
     private Boolean isJWTSupported;
@@ -39,8 +39,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     }
 
     public void initialize(ServiceConfiguration serviceConfiguration) throws IOException {
-        log.info("Initialize Pulsar Biscuit Authentication plugin...");
-
+        log.info("Initializing Pulsar Biscuit Authentication plugin...");
         log.info("With JWT authentication support?");
         isJWTSupported = Boolean.parseBoolean((String) serviceConfiguration.getProperty(CONF_BISCUIT_SUPPORT_JWT));
         if (isJWTSupported) {
@@ -55,13 +54,11 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
         log.info("Biscuit authentication configuration...");
         String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_PUBLIC_ROOT_KEY);
         log.debug("Got biscuit root public key: {}", key);
-        SEALING_KEY = (String) serviceConfiguration.getProperty(CONF_BISCUIT_SEALING_KEY);
-        log.debug("Got biscuit sealing key: {}", SEALING_KEY);
         try {
-            rootKey = new PublicKey(hexStringToByteArray(key));
+            rootKey = new PublicKey(Schema.PublicKey.Algorithm.Ed25519, hexStringToByteArray(key));
             log.info("Biscuit authentication initialized.");
-        } catch (Exception e) {
-            log.error("Could not decode Biscuit root public key: {}", e);
+        } catch (Exception ex) {
+            log.error("Could not decode Biscuit root public key", ex);
             throw new IOException();
         }
     }
@@ -113,27 +110,13 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
         }
     }
 
-    private String parseBiscuit(final String biscuit) throws AuthenticationException {
-        log.debug("Biscuit to parse: {}", biscuit);
+    private String parseBiscuit(final String biscuitB64Url) throws AuthenticationException {
+        log.debug("Biscuit to parse: {}", biscuitB64Url);
         try {
-            Either<Error, Biscuit> deser = Biscuit.from_b64(biscuit);
-
-            if (deser.isLeft()) {
-                throw new AuthenticationException("Could not deserialize biscuit");
-            } else {
-                Biscuit realBiscuit = deser.get();
-                log.debug("Deserialized biscuit");
-
-                if (realBiscuit.check_root_key(rootKey).isLeft()) {
-                    throw new AuthenticationException("This biscuit was not generated with the expected root key");
-                }
-                log.debug("Root key is valid");
-
-                byte[] sealed = realBiscuit.seal(SEALING_KEY.getBytes()).get();
-                log.debug("Biscuit deserialized and sealed");
-                return "biscuit:" + Base64.getUrlEncoder().encodeToString(sealed);
-            }
-        } catch (IllegalArgumentException e) {
+            Biscuit.from_b64url(biscuitB64Url, rootKey);
+            log.debug("Deserialized biscuit");
+            return "biscuit:" + biscuitB64Url;
+        } catch (IllegalArgumentException | NoSuchAlgorithmException | SignatureException | InvalidKeyException | Error e) {
             throw new AuthenticationException(e.getMessage());
         }
     }
