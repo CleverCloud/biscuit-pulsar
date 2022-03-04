@@ -5,7 +5,7 @@
   <artifactId>biscuit-pulsar</artifactId>
   <packaging>jar</packaging>
   <name>biscuit-pulsar</name>
-  <version>2.4.0-SNAPSHOT</version>
+  <version>3.0.0</version>
   <url>https://github.com/clevercloud/biscuit-pulsar</url>
 
   <description>Biscuit authentication/authorization plugins for Apache Pulsar</description>
