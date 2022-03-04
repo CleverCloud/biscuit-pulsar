@@ -4,7 +4,6 @@ import com.google.common.base.Charsets;
 import org.apache.pulsar.client.api.Authentication;
 import org.apache.pulsar.client.api.AuthenticationDataProvider;
 import org.apache.pulsar.client.api.EncodedAuthenticationParameterSupport;
-import org.apache.pulsar.client.api.PulsarClientException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -31,7 +30,7 @@ public class AuthenticationBiscuit implements Authentication, EncodedAuthenticat
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         // noop
     }
 
@@ -41,7 +40,7 @@ public class AuthenticationBiscuit implements Authentication, EncodedAuthenticat
     }
 
     @Override
-    public AuthenticationDataProvider getAuthData() throws PulsarClientException {
+    public AuthenticationDataProvider getAuthData() {
         return new AuthenticationDataBiscuit(biscuitSupplier);
     }
 
@@ -72,7 +71,7 @@ public class AuthenticationBiscuit implements Authentication, EncodedAuthenticat
     }
 
     @Override
-    public void start() throws PulsarClientException {
+    public void start() {
         // noop
     }
 }
