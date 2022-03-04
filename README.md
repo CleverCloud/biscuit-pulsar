@@ -17,7 +17,6 @@ This only supports Apache Pulsar v2.9+.
 
 The listed dependencies can be necessary to add to the /lib of pulsar folder as jars:
 
-- curve25519-elisabeth
 - vavr
 - protobuf
 - biscuit-java
@@ -28,7 +27,6 @@ We currently are using this script to put libs on pulsar nodes:
 ```bash
 #!/bin/bash
 
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/cafe/cryptography/curve25519-elisabeth/0.1.0/curve25519-elisabeth-0.1.0.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.3/vavr-0.10.3.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.16.1/protobuf-java-3.16.1.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/<VERSION>/biscuit-java-<VERSION>.jar"
@@ -54,7 +52,6 @@ authorizationProvider=com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit
 
 ### --- Biscuit Authentication Provider --- ###
 biscuitPublicRootKey=@@BISCUIT_PUBLIC_ROOT_KEY@@
-biscuitSealingKey=@@BISCUIT_PUBLIC_SEALING_KEY@@
 # support JWT side by side with Biscuit for AuthenticationToken
 biscuitSupportJWT=true|false
 # biscuit verify run limits before TimeOut
@@ -69,10 +66,6 @@ biscuitRunLimitsMaxTimeMillis=30
 sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" broker.conf
 sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" proxy.conf
 sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" standalone.conf
-
-sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" broker.conf
-sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" proxy.conf
-sed -i -e "s/@@BISCUIT_PUBLIC_SEALING_KEY@@/$2/" standalone.conf
 ```
 
 ## Usage
