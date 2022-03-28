@@ -164,13 +164,14 @@ public class AuthorizationProviderBiscuitTest {
 
         Block block0 = new Block(0, symbols);
         block0.add_fact(adminFact);
-        block0.add_rule("right($tenant, $namespace, \"create_topic\") <- namespace($tenant, $namespace), namespace_operation(\"create_topic\")");
+        block0.add_check("check if namespace_operation(\"create_topic\")");
         Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         log.debug(biscuit.print());
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
     }
 
     @Test
