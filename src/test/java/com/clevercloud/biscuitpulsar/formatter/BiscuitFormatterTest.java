@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 public class BiscuitFormatterTest {
     @Test
     public void testNamespaceOperations() {
-        assertEquals("[\"create_topic\",\"get_topic\",\"get_topics\",\"delete_topic\",\"clear_backlog\",\"unsubscribe\"]", namespaceOperations);
+        assertEquals("[\"create_topic\",\"get_topic\",\"get_topics\",\"delete_topic\",\"get_bundle\",\"clear_backlog\",\"unsubscribe\"]", namespaceOperations);
     }
 
     @Test
@@ -18,6 +18,6 @@ public class BiscuitFormatterTest {
 
     @Test
     public void testTopicOperations() {
-        assertEquals("[\"lookup\",\"produce\",\"consume\",\"compact\",\"expire_messages\",\"offload\",\"peek_messages\",\"reset_cursor\",\"skip\",\"terminate\",\"subscribe\",\"get_subscriptions\",\"unsubscribe\",\"get_stats\",\"get_metadata\",\"get_backlog_size\",\"set_replicated_subscription_status\"]", topicOperations);
+        assertEquals("[\"lookup\",\"produce\",\"consume\",\"compact\",\"expire_messages\",\"offload\",\"peek_messages\",\"reset_cursor\",\"skip\",\"terminate\",\"get_bundle_range\",\"subscribe\",\"get_subscriptions\",\"unsubscribe\",\"get_stats\",\"get_metadata\",\"get_backlog_size\",\"set_replicated_subscription_status\"]", topicOperations);
     }
 }

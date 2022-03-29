@@ -19,7 +19,7 @@ public enum BiscuitTopicOperation {
     //REVOKE_PERMISSION,
 
     //ADD_BUNDLE_RANGE,
-    //GET_BUNDLE_RANGE,
+    GET_BUNDLE_RANGE,
     //DELETE_BUNDLE_RANGE,
 
     SUBSCRIBE,

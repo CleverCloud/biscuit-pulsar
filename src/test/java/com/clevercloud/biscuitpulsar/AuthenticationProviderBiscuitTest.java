@@ -25,7 +25,7 @@ public class AuthenticationProviderBiscuitTest {
 
     @Test
     public void testAuthSecretKeyPair() throws Exception {
-        KeyPair root = new KeyPair("3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907");
+        KeyPair root = new KeyPair("D283C7E436D89C544CC2B20C1028A7ADDC18FCED6386A6130465C17B996CD893");
 
         LOGGER.info("ROOT KEY");
         LOGGER.info(root.toHex());
