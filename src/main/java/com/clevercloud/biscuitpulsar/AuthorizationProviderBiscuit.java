@@ -9,6 +9,7 @@ import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authorization.AuthorizationProvider;
 import org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider;
+import org.apache.pulsar.broker.cache.ConfigurationCacheService;
 import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
@@ -36,7 +37,7 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     final static String CONF_BISCUIT_RUNLIMITS_MAX_TIME = "biscuitRunLimitsMaxTimeMillis";
 
     public ServiceConfiguration conf;
-    public PulsarResources pulsarResources;
+    public ConfigurationCacheService cacheService;
     private PulsarAuthorizationProvider defaultProvider;
     private RunLimits runLimits;
 
@@ -45,9 +46,9 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         runLimits = new RunLimits(1000, 100, Duration.ofMillis(20));
     }
 
-    public AuthorizationProviderBiscuit(ServiceConfiguration conf, PulsarResources pulsarResources)
+    public AuthorizationProviderBiscuit(ServiceConfiguration conf, ConfigurationCacheService cacheService)
             throws IOException {
-        initialize(conf, pulsarResources);
+        initialize(conf, cacheService);
         runLimits = new RunLimits(
                 Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_FACTS)),
                 Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS)),
@@ -56,10 +57,10 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public void initialize(ServiceConfiguration conf, PulsarResources pulsarResources) throws IOException {
+    public void initialize(ServiceConfiguration conf, ConfigurationCacheService cache) throws IOException {
         this.conf = conf;
-        this.pulsarResources = pulsarResources;
-        defaultProvider = new PulsarAuthorizationProvider(conf, pulsarResources);
+        this.cacheService = cache;
+        defaultProvider = new PulsarAuthorizationProvider(conf, cache);
     }
 
     private Either<Exception, Authorizer> authorizerFromBiscuitB64Url(String role) {
