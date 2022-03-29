@@ -60,6 +60,32 @@ public class AuthorizationProviderBiscuitTest {
         });
     }
 
+
+    @Test
+    public void testAccessOnlyToValidData() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        Block block0 = new Block(0, symbols);
+        block0.add_fact(adminFact);
+        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
+        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+
+        String authedBiscuit = authedBiscuit(root, biscuit);
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/namespaceForbidden/" + topic), authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get("tenantForbidden/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/topicForbidden"), authedBiscuit, TopicOperation.PRODUCE, null));
+    }
+    
+
     @Test
     public void testProduceAndNotConsumeOnTopic() throws Exception {
         SecureRandom rng = new SecureRandom();
@@ -95,13 +121,17 @@ public class AuthorizationProviderBiscuitTest {
         Block block0 = new Block(0, symbols);
         block0.add_fact(adminFact);
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+
+        String authedRootBiscuit = authedBiscuit(root, rootBiscuit);
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.CONSUME, null));
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
 
         String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         log.debug(biscuit.print());
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null));
         assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null));
@@ -142,13 +172,17 @@ public class AuthorizationProviderBiscuitTest {
         Block block0 = new Block(0, symbols);
         block0.add_fact(adminFact);
         Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        
+        String authedRootBiscuit = authedBiscuit(root, rootBiscuit);
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.PRODUCE, null));
+        assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.CONSUME, null));
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME));
         Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
 
         String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null));
     }
@@ -161,17 +195,36 @@ public class AuthorizationProviderBiscuitTest {
 
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
-
+        
+        //biscuit allowing "create topic" operation
         Block block0 = new Block(0, symbols);
         block0.add_fact(adminFact);
         block0.add_check("check if namespace_operation(\"create_topic\")");
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
 
-        String authedBiscuit = authedBiscuit(root, biscuit);
+        String authedBiscuit = authedBiscuit(root, rootBiscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(biscuit.print());
+        log.debug(rootBiscuit.print());
         assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
         assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/namespace123"), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/namespace123"), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get("tenant123/" + namespace), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get("tenant123/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
+
+        //attenuate biscuit to limit access to a single tenant/namespace
+        Block block1 = rootBiscuit.create_block();
+        block1.add_check("check if " + namespaceFact(tenant, namespace));
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+
+        String attenuatedBiscuit = authedBiscuit(root, biscuit);
+        log.debug(biscuit.print());
+        assertTrue(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), attenuatedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), attenuatedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/namespace123"), attenuatedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/namespace123"), attenuatedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get("tenant123/" + namespace), attenuatedBiscuit, NamespaceOperation.CREATE_TOPIC, null));
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get("tenant123/" + namespace), attenuatedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
     }
 
     @Test
@@ -195,6 +248,11 @@ public class AuthorizationProviderBiscuitTest {
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.CONSUME, null));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null));
         assertTrue(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get(tenant + "/namespace123/test123"), authedBiscuit, TopicOperation.PRODUCE, null));
+        assertFalse(authorizationProvider.allowTopicOperation(TopicName.get("tenant123/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.PRODUCE, null));
+        
+        // Test any other operation which require more rights
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
     }
 
     @Test
@@ -219,6 +277,9 @@ public class AuthorizationProviderBiscuitTest {
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
         assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
+        
+        // Test any other operation which require more rights
+        assertFalse(authorizationProvider.allowNamespaceOperation(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null));
     }
 
     @Test
@@ -396,6 +457,10 @@ public class AuthorizationProviderBiscuitTest {
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
         assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
     }
 
     @Test
@@ -421,6 +486,10 @@ public class AuthorizationProviderBiscuitTest {
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
         assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
     }
 
     @Test
@@ -445,6 +514,8 @@ public class AuthorizationProviderBiscuitTest {
         log.debug(biscuit.print());
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
     }
