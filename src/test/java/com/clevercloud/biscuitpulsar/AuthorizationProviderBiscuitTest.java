@@ -519,4 +519,40 @@ public class AuthorizationProviderBiscuitTest {
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
     }
+
+    @Test
+    public void testAuthorizeConsumptionOnSpecifiedTopic() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        // create the cluster root biscuit
+        Block block0 = new Block(0, symbols);
+        block0.add_fact(adminFact);
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+
+        // attenuate it to reduce its rights to one tenant/namespace only
+        Block block1 = rootBiscuit.create_block();
+        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
+        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build());
+
+        // attenuate it to reduce its rights to consume on tenant/namespace/topic only
+        TopicName topicName = TopicName.get(String.format("%s/%s/%s", tenant, namespace, topic));
+        Block block2 = biscuit1.create_block();
+        block2.add_check("check if " + topicFact(topicName) + "," + topicOperationFact(TopicOperation.CONSUME));
+        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build());
+
+        String authedBiscuit = authedBiscuit(root, biscuit2);
+
+        log.debug(biscuit2.print());
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "topicForbidden"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
+    }
 }
