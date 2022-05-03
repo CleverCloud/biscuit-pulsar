@@ -25,8 +25,8 @@
     <biscuit-java.version>2.2.0</biscuit-java.version>
     <logback-classic.version>1.2.10</logback-classic.version>
     <protobuf.version>3.16.1</protobuf.version>
-    <pulsar.version>2.9.1</pulsar.version>
-    <vavr.version>0.10.2</vavr.version>
+    <pulsar.version>2.10.0</pulsar.version>
+    <vavr.version>0.10.3</vavr.version>
 
     <!-- test dependencies -->
     <assertj-core.version>3.14.0</assertj-core.version>
