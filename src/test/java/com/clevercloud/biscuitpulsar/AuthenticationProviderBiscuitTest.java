@@ -3,6 +3,7 @@ package com.clevercloud.biscuitpulsar;
 import com.clevercloud.biscuit.crypto.KeyPair;
 import com.clevercloud.biscuit.datalog.SymbolTable;
 import com.clevercloud.biscuit.token.Biscuit;
+import com.clevercloud.biscuit.token.UnverifiedBiscuit;
 import com.clevercloud.biscuit.token.builder.Block;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.naming.AuthenticationException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Properties;
@@ -19,6 +21,7 @@ import static com.clevercloud.biscuit.crypto.TokenSignature.hex;
 import static com.clevercloud.biscuit.token.builder.Utils.fact;
 import static com.clevercloud.biscuit.token.builder.Utils.s;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 public class AuthenticationProviderBiscuitTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationProviderBiscuitTest.class);
@@ -66,6 +69,40 @@ public class AuthenticationProviderBiscuitTest {
         });
 
         assertThat(subject, new StringStartsWith("biscuit:"));
+
+        provider.close();
+    }
+
+
+    @Test
+    public void testRevocation() throws Exception {
+        KeyPair root = new KeyPair("D283C7E436D89C544CC2B20C1028A7ADDC18FCED6386A6130465C17B996CD893");
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
+
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+
+        UnverifiedBiscuit unverifiedBiscuit = UnverifiedBiscuit.from_b64url("EnYKDBgDIggKBggEEgIYDRIkCAASIDZFTlStxCxoVWTPpNT_K4i51-J9begIIm23SxZw_ECAGkADks3E29opT9JUJprQzl0a0unGMBsYmUUHTdBRiQ5JXdFr9TkPhOhJmiBFvehXlWNvLhVjCfm0JScJeZV-UCgKGvwBCpEBCilvcmdhXzVjMjg4MGM1LTBjOWUtNGI1YS1hY2FiLTA4NWVkMmY4Zjk1MAorcHVsc2FyXzQ5ZDdhYmU1LTEyOTAtNDAxNy04NjhlLTdkOWUxOGUzNzVmZgoFdG9waWMYAzIuChIKAggbEgwICRIDGIAIEgMYgQgKGAoCCBsSEgiCCBIDGIAIEgMYgQgSAwiCCBIkCAASIKx9Es26bZxaVm_LrNFkLL_8Mgr2tZPs9s5-aOsNYzK3GkD8qWru7MmK0LDe9KTYR2uUeLV0Q22jUEF2ZgKiSMuTcE6ivkc_bPH7W65prwVED5tS-Jdh18YFS_juIcMbhQUDIiIKIEYQvYZvVc98f-iejkWOGKm6Nia4El8Kohtim7X0FYgL");
+        String biscuit = unverifiedBiscuit.serialize_b64url();
+
+        assertThrows("Biscuit has been revoked.", AuthenticationException.class, () -> {
+            provider.authenticate(new AuthenticationDataSource() {
+                @Override
+                public boolean hasDataFromCommand() {
+                    return true;
+                }
+
+                @Override
+                public String getCommandData() {
+                    return biscuit;
+                }
+            });
+        });
 
         provider.close();
     }
