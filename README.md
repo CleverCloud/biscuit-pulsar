@@ -7,20 +7,20 @@
 
 ## Support
 
-This only supports Apache Pulsar v2.9+.
+This only supports Apache Pulsar v2.10.2+.
 
 ## Requirements
 
-`biscuit-pulsar` needs `protobuf` 3.16.1.
+`biscuit-pulsar` needs `protobuf` 3.16.3.
 
 ## Configuration
 
-The listed dependencies can be necessary to add to the /lib of pulsar folder as jars:
+The listed dependencies can be necessary to add to the `/lib` of pulsar folder as jars:
 
-- vavr
-- protobuf
-- biscuit-java
-- biscuit-pulsar
+- `vavr`
+- `protobuf`
+- `biscuit-java`
+- `biscuit-pulsar`
 
 We currently are using this script to put libs on pulsar nodes:
 
@@ -29,7 +29,7 @@ We currently are using this script to put libs on pulsar nodes:
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/net/i2p/crypto/eddsa/0.3.0/eddsa-0.3.0.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.3/vavr-0.10.3.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.16.1/protobuf-java-3.16.1.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.16.3/protobuf-java-3.16.3.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/<VERSION>/biscuit-java-<VERSION>.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/<VERSION>/biscuit-pulsar-<VERSION>.jar"
 ```
@@ -68,6 +68,10 @@ sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" broker.conf
 sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" proxy.conf
 sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" standalone.conf
 ```
+
+## Revocation list
+
+Revoked biscuit must have their revocation ids contained in `/etc/biscuit/revocation_list.hex.conf`, one revocation per line in hexadecimals. [Here is an example](https://raw.githubusercontent.com/CleverCloud/biscuit-pulsar/master/src/test/resources/revocation_list.hex.conf).
 
 ## Usage
 
