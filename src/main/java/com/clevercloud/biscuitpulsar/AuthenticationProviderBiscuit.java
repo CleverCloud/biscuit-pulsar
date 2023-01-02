@@ -4,6 +4,9 @@ import biscuit.format.schema.Schema;
 import com.clevercloud.biscuit.crypto.PublicKey;
 import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
+import com.clevercloud.biscuit.token.RevocationIdentifier;
+import com.clevercloud.biscuit.token.UnverifiedBiscuit;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
@@ -13,10 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationProviderBiscuit.class);
@@ -33,6 +39,8 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
 
     private AuthenticationProviderToken jwtAuthenticator;
     private Boolean isJWTSupported;
+
+    private Set<String> revokedIdentifiers;
 
     public void close() throws IOException {
         // noop
@@ -51,6 +59,8 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
             log.info("JWT authentication support DISABLED.");
         }
 
+        loadRevocationList();
+
         log.info("Biscuit authentication configuration...");
         String key = (String) serviceConfiguration.getProperty(CONF_BISCUIT_PUBLIC_ROOT_KEY);
         log.debug("Got biscuit root public key: {}", key);
@@ -61,6 +71,61 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
             log.error("Could not decode Biscuit root public key", ex);
             throw new IOException();
         }
+    }
+
+    /**
+     * This load the revocation list from <code>/etc/biscuit/revocation_list.hex.txt</code>. If the file does not exists
+     * it will fallback to the maven resources folder and load the file used for test <code>revocation_list.hex.conf</code>
+     *
+     * Please note that the Scanner usage if for performance issues.
+     * @throws IOException
+     */
+    private void loadRevocationList() throws IOException {
+        this.revokedIdentifiers = new HashSet<>();
+
+        String defaultFilePath = "/etc/biscuit/revocation_list.hex.txt";
+        File file = new File(defaultFilePath);
+
+        if (file.exists() && !file.isDirectory() && file.canRead()) {
+            log.info(String.format("Loading static revocation list from %s...", defaultFilePath));
+
+            FileInputStream inputStream = null;
+            Scanner sc = null;
+            try {
+                inputStream = new FileInputStream(file);
+                sc = new Scanner(inputStream, StandardCharsets.UTF_8);
+                while (sc.hasNextLine()) {
+                    this.revokedIdentifiers.add(RevocationIdentifier.from_bytes(hexStringToByteArray(sc.nextLine())).serialize_b64url());
+                }
+
+                if (sc.ioException() != null) {
+                    throw sc.ioException();
+                }
+            } finally {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+                if (sc != null) {
+                    sc.close();
+                }
+            }
+        } else {
+            String fallbackFilePath = "revocation_list.hex.conf";
+            log.info(String.format("Loading static revocation list from %s...", fallbackFilePath));
+            InputStream revocationListStream = getClass().getClassLoader().getResourceAsStream(fallbackFilePath);
+            assert revocationListStream != null;
+            InputStreamReader streamReader = new InputStreamReader(revocationListStream, StandardCharsets.UTF_8);
+            BufferedReader reader = new BufferedReader(streamReader);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                this.revokedIdentifiers.add(RevocationIdentifier.from_bytes(hexStringToByteArray(line)).serialize_b64url());
+            }
+            reader.close();
+            streamReader.close();
+            revocationListStream.close();
+        }
+
+        log.info(String.format("Loaded revocation list with %s item(s).", this.revokedIdentifiers.size()));
     }
 
     public String getAuthMethodName() {
@@ -113,11 +178,16 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     private String parseBiscuit(final String biscuitB64Url) throws AuthenticationException {
         log.debug("Biscuit to parse: {}", biscuitB64Url);
         try {
-            Biscuit.from_b64url(biscuitB64Url, rootKey);
+            UnverifiedBiscuit biscuit = UnverifiedBiscuit.from_b64url(biscuitB64Url);
+            Set<String> biscuitRevocationIdentifiers = biscuit.revocation_identifiers().stream().map(RevocationIdentifier::serialize_b64url).collect(Collectors.toSet());
+            if (!Sets.intersection(revokedIdentifiers, biscuitRevocationIdentifiers).isEmpty()) {
+                throw new AuthenticationException("Biscuit has been revoked.");
+            }
             log.debug("Deserialized biscuit");
             return "biscuit:" + biscuitB64Url;
-        } catch (IllegalArgumentException | NoSuchAlgorithmException | SignatureException | InvalidKeyException | Error e) {
-            throw new AuthenticationException(e.getMessage());
+        } catch (IllegalArgumentException | Error e) {
+            e.printStackTrace();
+            throw new AuthenticationException(e.toString());
         }
     }
 
