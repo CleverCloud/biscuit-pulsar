@@ -27,7 +27,7 @@
     <logback-classic.version>1.2.10</logback-classic.version>
     <slf4j-reload4j.version>1.7.36</slf4j-reload4j.version>
     <protobuf.version>3.16.3</protobuf.version>
-    <pulsar.version>2.10.2</pulsar.version>
+    <pulsar.version>2.10.3</pulsar.version>
     <vavr.version>0.10.3</vavr.version>
 
     <!-- test dependencies -->
