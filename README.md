@@ -5,10 +5,6 @@
 [![Central Version](https://img.shields.io/maven-central/v/com.clever-cloud/biscuit-pulsar)](https://mvnrepository.com/artifact/com.clever-cloud/biscuit-pulsar)
 [![Nexus Version](https://img.shields.io/nexus/r/com.clever-cloud/biscuit-pulsar?server=https%3A%2F%2Fs01.oss.sonatype.org)](https://search.maven.org/artifact/com.clever-cloud/biscuit-pulsar)
 
-## Support
-
-This only supports Apache Pulsar v2.10.2+.
-
 ## Requirements
 
 `biscuit-pulsar` needs `protobuf` 3.16.3.
