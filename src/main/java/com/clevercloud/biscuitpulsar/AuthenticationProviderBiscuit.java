@@ -74,7 +74,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     }
 
     /**
-     * This load the revocation list from <code>/etc/biscuit/revocation_list.hex.txt</code>. If the file does not exists
+     * This load the revocation list from <code>/etc/biscuit/revocation_list.hex.conf</code>. If the file does not exists
      * it will fallback to the maven resources folder and load the file used for test <code>revocation_list.hex.conf</code>
      *
      * Please note that the Scanner usage if for performance issues.
@@ -83,7 +83,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     private void loadRevocationList() throws IOException {
         this.revokedIdentifiers = new HashSet<>();
 
-        String defaultFilePath = "/etc/biscuit/revocation_list.hex.txt";
+        String defaultFilePath = "/etc/biscuit/revocation_list.hex.conf";
         File file = new File(defaultFilePath);
 
         if (file.exists() && !file.isDirectory() && file.canRead()) {
