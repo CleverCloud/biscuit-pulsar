@@ -78,7 +78,7 @@ public final class BiscuitFormatter {
     }
 
     public static String topicFragment(TopicName topic) {
-        return Stream.of(topic.getTenant(), topic.getNamespacePortion(), topic.getLocalName())
+        return Stream.of(topic.getTenant(), topic.getNamespacePortion(), TopicFormatter.sanitizeTopicName(topic))
                 .collect(Collectors.joining("\",\"", "\"", "\""));
     }
 
