@@ -19,10 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.SignatureException;
+import java.security.*;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
@@ -555,4 +552,43 @@ public class AuthorizationProviderBiscuitTest {
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "topicForbidden"), authedBiscuit, TopicOperation.PRODUCE, null).get());
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
     }
+
+    @Test
+    public void testAuthorizeConsumptionOnSpecifiedTopicPartioned() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+
+        // create the cluster root biscuit
+        Block block0 = new Block(0, symbols);
+        block0.add_fact(adminFact);
+        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+
+        // attenuate it to reduce its rights to one tenant/namespace only
+        Block block1 = rootBiscuit.create_block();
+        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
+        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build());
+
+        // attenuate it to reduce its rights to consume on tenant/namespace/topic only
+        TopicName topicName = TopicName.get(String.format("%s/%s/%s", tenant, namespace, topic));
+        Block block2 = biscuit1.create_block();
+        block2.add_check("check if " + topicFact(topicName) + "," + topicOperationFact(TopicOperation.CONSUME));
+        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build());
+
+        String authedBiscuit = authedBiscuit(root, biscuit2);
+
+        log.debug(biscuit2.print());
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+
+        String topicWithPartitionTail = topic + "-partition-0";
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topicWithPartitionTail), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + topicWithPartitionTail), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "topicForbidden-partition-0"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" +topicWithPartitionTail), authedBiscuit, TopicOperation.PRODUCE, null).get());
+    }
+
 }
