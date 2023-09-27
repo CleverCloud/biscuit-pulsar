@@ -20,8 +20,8 @@ import java.util.Properties;
 import static com.clevercloud.biscuit.crypto.TokenSignature.hex;
 import static com.clevercloud.biscuit.token.builder.Utils.fact;
 import static com.clevercloud.biscuit.token.builder.Utils.s;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.hamcrest.MatcherAssert.*;
 
 public class AuthenticationProviderBiscuitTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationProviderBiscuitTest.class);
