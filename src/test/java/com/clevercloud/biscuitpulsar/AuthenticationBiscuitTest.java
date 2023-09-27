@@ -15,8 +15,7 @@ public class AuthenticationBiscuitTest {
     public void testAuthBiscuitClientConfig() throws Exception {
         ClientConfigurationData clientConfig = new ClientConfigurationData();
         clientConfig.setServiceUrl("pulsar://service-url");
-        clientConfig.setAuthPluginClassName(AuthenticationBiscuit.class.getName());
-        clientConfig.setAuthParams("biscuit-xyz");
+        clientConfig.setAuthentication(new AuthenticationBiscuit("biscuit-xyz"));
 
         PulsarClientImpl pulsarClient = new PulsarClientImpl(clientConfig);
 
