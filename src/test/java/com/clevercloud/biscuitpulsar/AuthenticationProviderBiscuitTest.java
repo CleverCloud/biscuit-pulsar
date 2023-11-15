@@ -7,12 +7,14 @@ import com.clevercloud.biscuit.token.UnverifiedBiscuit;
 import com.clevercloud.biscuit.token.builder.Block;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.broker.authentication.AuthenticationState;
 import org.hamcrest.core.StringStartsWith;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
+import javax.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Properties;
@@ -22,6 +24,8 @@ import static com.clevercloud.biscuit.token.builder.Utils.fact;
 import static com.clevercloud.biscuit.token.builder.Utils.s;
 import static org.junit.Assert.assertThrows;
 import static org.hamcrest.MatcherAssert.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 public class AuthenticationProviderBiscuitTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationProviderBiscuitTest.class);
@@ -105,5 +109,67 @@ public class AuthenticationProviderBiscuitTest {
         });
 
         provider.close();
+    }
+
+    @Test
+    public void testTokenFromHttpParams() throws Exception {
+        KeyPair root = new KeyPair("D283C7E436D89C544CC2B20C1028A7ADDC18FCED6386A6130465C17B996CD893");
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
+
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
+
+        byte[] seed = {0, 0, 0, 0};
+        SecureRandom rng = new SecureRandom(seed);
+        Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build());
+
+        HttpServletRequest servletRequest = mock(HttpServletRequest.class);
+        doReturn(b.serialize_b64url()).when(servletRequest).getParameter("token");
+        doReturn(null).when(servletRequest).getHeader("Authorization");
+        doReturn("127.0.0.1").when(servletRequest).getRemoteAddr();
+        doReturn(0).when(servletRequest).getRemotePort();
+
+        AuthenticationState authState = provider.newHttpAuthState(servletRequest);
+        provider.authenticate(authState.getAuthDataSource());
+    }
+
+    @Test
+    public void testTokenFromHttpHeaders() throws Exception {
+        KeyPair root = new KeyPair("D283C7E436D89C544CC2B20C1028A7ADDC18FCED6386A6130465C17B996CD893");
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
+
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
+
+        byte[] seed = {0, 0, 0, 0};
+        SecureRandom rng = new SecureRandom(seed);
+        Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build());
+        HttpServletRequest servletRequest = mock(HttpServletRequest.class);
+        doReturn("Bearer " + b.serialize_b64url()).when(servletRequest).getHeader("Authorization");
+        doReturn("127.0.0.1").when(servletRequest).getRemoteAddr();
+        doReturn(0).when(servletRequest).getRemotePort();
+
+        AuthenticationState authState = provider.newHttpAuthState(servletRequest);
+        provider.authenticate(authState.getAuthDataSource());
     }
 }
