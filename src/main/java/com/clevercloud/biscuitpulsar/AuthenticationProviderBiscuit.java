@@ -9,14 +9,16 @@ import com.clevercloud.biscuit.token.UnverifiedBiscuit;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.ServiceConfiguration;
-import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
-import org.apache.pulsar.broker.authentication.AuthenticationProvider;
-import org.apache.pulsar.broker.authentication.AuthenticationProviderToken;
+import org.apache.pulsar.broker.authentication.*;
+import org.apache.pulsar.common.api.AuthData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
+import javax.net.ssl.SSLSession;
+import javax.servlet.http.HttpServletRequest;
 import java.io.*;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -147,6 +149,17 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
         }
     }
 
+    @Override
+    public AuthenticationState newAuthState(AuthData authData, SocketAddress remoteAddress, SSLSession sslSession)
+            throws AuthenticationException {
+        return new OneStageAuthenticationState(authData, remoteAddress, sslSession, this);
+    }
+
+    @Override
+    public AuthenticationState newHttpAuthState(HttpServletRequest request) throws AuthenticationException {
+        return new OneStageAuthenticationState(new HttpServletRequestWrapper(request), this);
+    }
+
     public static String getBearerValue(AuthenticationDataSource authData) throws AuthenticationException {
         if (authData.hasDataFromCommand()) {
             // Authenticate Pulsar binary connection
@@ -200,5 +213,27 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
                     + Character.digit(hex.charAt(i + 1), 16));
         }
         return data;
+    }
+
+    private static final class HttpServletRequestWrapper extends javax.servlet.http.HttpServletRequestWrapper {
+        private final HttpServletRequest request;
+
+        public HttpServletRequestWrapper(HttpServletRequest request) {
+            super(request);
+            this.request = request;
+        }
+
+        @Override
+        public String getHeader(String name) {
+            // The browser javascript WebSocket client couldn't add the auth param to the request header, use the
+            // query param `token` to transport the auth token for the browser javascript WebSocket client.
+            if (name.equals(HTTP_HEADER_NAME) && request.getHeader(HTTP_HEADER_NAME) == null) {
+                String token = request.getParameter(BISCUIT);
+                if (token != null) {
+                    return !token.startsWith(HTTP_HEADER_VALUE_PREFIX) ? HTTP_HEADER_VALUE_PREFIX + token : token;
+                }
+            }
+            return super.getHeader(name);
+        }
     }
 }
