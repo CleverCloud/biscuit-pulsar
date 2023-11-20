@@ -140,7 +140,10 @@ public class AuthenticationProviderBiscuitTest {
         doReturn(0).when(servletRequest).getRemotePort();
 
         AuthenticationState authState = provider.newHttpAuthState(servletRequest);
-        provider.authenticate(authState.getAuthDataSource());
+        String subject = provider.authenticate(authState.getAuthDataSource());
+        assertThat(subject, new StringStartsWith("biscuit:"));
+
+        provider.close();
     }
 
     @Test
@@ -170,6 +173,8 @@ public class AuthenticationProviderBiscuitTest {
         doReturn(0).when(servletRequest).getRemotePort();
 
         AuthenticationState authState = provider.newHttpAuthState(servletRequest);
-        provider.authenticate(authState.getAuthDataSource());
+        String subject = provider.authenticate(authState.getAuthDataSource());
+        assertThat(subject, new StringStartsWith("biscuit:"));
+        provider.close();
     }
 }
