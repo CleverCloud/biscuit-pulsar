@@ -1,11 +1,11 @@
 package com.clevercloud.biscuitpulsar;
 
 import biscuit.format.schema.Schema;
-import com.clevercloud.biscuit.crypto.PublicKey;
-import com.clevercloud.biscuit.error.Error;
-import com.clevercloud.biscuit.token.Biscuit;
-import com.clevercloud.biscuit.token.RevocationIdentifier;
-import com.clevercloud.biscuit.token.UnverifiedBiscuit;
+import org.biscuitsec.biscuit.crypto.PublicKey;
+import org.biscuitsec.biscuit.error.Error;
+import org.biscuitsec.biscuit.token.Biscuit;
+import org.biscuitsec.biscuit.token.RevocationIdentifier;
+import org.biscuitsec.biscuit.token.UnverifiedBiscuit;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.ServiceConfiguration;

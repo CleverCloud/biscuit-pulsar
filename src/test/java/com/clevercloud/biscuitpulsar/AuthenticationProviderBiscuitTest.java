@@ -1,10 +1,10 @@
 package com.clevercloud.biscuitpulsar;
 
-import com.clevercloud.biscuit.crypto.KeyPair;
-import com.clevercloud.biscuit.datalog.SymbolTable;
-import com.clevercloud.biscuit.token.Biscuit;
-import com.clevercloud.biscuit.token.UnverifiedBiscuit;
-import com.clevercloud.biscuit.token.builder.Block;
+import org.biscuitsec.biscuit.crypto.KeyPair;
+import org.biscuitsec.biscuit.datalog.SymbolTable;
+import org.biscuitsec.biscuit.token.Biscuit;
+import org.biscuitsec.biscuit.token.UnverifiedBiscuit;
+import org.biscuitsec.biscuit.token.builder.Block;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authentication.AuthenticationState;
@@ -19,9 +19,9 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Properties;
 
-import static com.clevercloud.biscuit.crypto.TokenSignature.hex;
-import static com.clevercloud.biscuit.token.builder.Utils.fact;
-import static com.clevercloud.biscuit.token.builder.Utils.s;
+import static org.biscuitsec.biscuit.crypto.TokenSignature.hex;
+import static org.biscuitsec.biscuit.token.builder.Utils.fact;
+import static org.biscuitsec.biscuit.token.builder.Utils.s;
 import static org.junit.Assert.assertThrows;
 import static org.hamcrest.MatcherAssert.*;
 import static org.mockito.Mockito.doReturn;

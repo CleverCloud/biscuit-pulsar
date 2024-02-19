@@ -1,10 +1,10 @@
 package com.clevercloud.biscuitpulsar;
 
-import com.clevercloud.biscuit.crypto.KeyPair;
-import com.clevercloud.biscuit.datalog.SymbolTable;
-import com.clevercloud.biscuit.error.Error;
-import com.clevercloud.biscuit.token.Biscuit;
-import com.clevercloud.biscuit.token.builder.Block;
+import org.biscuitsec.biscuit.crypto.KeyPair;
+import org.biscuitsec.biscuit.datalog.SymbolTable;
+import org.biscuitsec.biscuit.error.Error;
+import org.biscuitsec.biscuit.token.Biscuit;
+import org.biscuitsec.biscuit.token.builder.Block;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.naming.NamespaceName;
@@ -23,7 +23,7 @@ import java.security.*;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-import static com.clevercloud.biscuit.crypto.TokenSignature.hex;
+import static org.biscuitsec.biscuit.crypto.TokenSignature.hex;
 import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

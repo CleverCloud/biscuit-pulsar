@@ -1,9 +1,9 @@
 package com.clevercloud.biscuitpulsar;
 
-import com.clevercloud.biscuit.datalog.RunLimits;
-import com.clevercloud.biscuit.error.Error;
-import com.clevercloud.biscuit.token.Authorizer;
-import com.clevercloud.biscuit.token.Biscuit;
+import org.biscuitsec.biscuit.datalog.RunLimits;
+import org.biscuitsec.biscuit.error.Error;
+import org.biscuitsec.biscuit.token.Authorizer;
+import org.biscuitsec.biscuit.token.Biscuit;
 import io.vavr.control.Either;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
