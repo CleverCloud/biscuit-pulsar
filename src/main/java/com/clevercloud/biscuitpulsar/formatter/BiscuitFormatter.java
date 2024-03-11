@@ -36,8 +36,9 @@ public final class BiscuitFormatter {
      * </code>
      */
     public static final String policiesOperations =
-            Arrays.stream(BiscuitPolicyOperation.values())
-                    .map(policyOperation -> policyOperation.toString().toLowerCase())
+            BiscuitPolicyOperation.WHITELISTED_POLICIES_ACTIONS.stream()
+                    .map(String::toLowerCase)
+                    .sorted()
                     .collect(Collectors.joining("\",\"", "[\"", "\"]"));
 
     /**

@@ -1,60 +1,55 @@
 package com.clevercloud.biscuitpulsar.operation;
 
-public enum BiscuitPolicyOperation {
-    ALL_READ,
-    //ALL_WRITE,
-    ANTI_AFFINITY_READ,
-    //ANTI_AFFINITY_WRITE,
-    AUTO_SUBSCRIPTION_CREATION_READ,
-    AUTO_SUBSCRIPTION_CREATION_WRITE,
-    AUTO_TOPIC_CREATION_READ,
-    AUTO_TOPIC_CREATION_WRITE,
-    BACKLOG_READ,
-    BACKLOG_WRITE,
-    COMPACTION_READ,
-    COMPACTION_WRITE,
-    DEDUPLICATION_READ,
-    DEDUPLICATION_SNAPSHOT_READ,
-    DEDUPLICATION_SNAPSHOT_WRITE,
-    DEDUPLICATION_WRITE,
-    DELAYED_DELIVERY_READ,
-    DELAYED_DELIVERY_WRITE,
-    ENCRYPTION_READ,
-    ENCRYPTION_WRITE,
-    INACTIVE_TOPIC_READ,
-    INACTIVE_TOPIC_WRITE,
-    MAX_CONSUMERS_READ,
-    //MAX_CONSUMERS_WRITE,
-    MAX_PRODUCERS_READ,
-    //MAX_PRODUCERS_WRITE,
-    MAX_SUBSCRIPTIONS_READ,
-    //MAX_SUBSCRIPTIONS_WRITE,
-    MAX_TOPICS_READ,
-    //MAX_TOPICS_WRITE,
-    MAX_UNACKED_READ,
-    MAX_UNACKED_WRITE,
-    OFFLOAD_READ,
-    //OFFLOAD_WRITE,
-    PARTITION_READ,
-    PARTITION_WRITE,
-    PERSISTENCE_READ,
-    PERSISTENCE_WRITE,
-    RATE_READ,
-    RATE_WRITE,
-    REPLICATION_RATE_READ,
-    //REPLICATION_RATE_WRITE,
-    REPLICATION_READ,
-    //REPLICATION_WRITE,
-    RESOURCEGROUP_READ,
-    RESOURCEGROUP_WRITE,
-    RETENTION_READ,
-    RETENTION_WRITE,
-    SCHEMA_COMPATIBILITY_STRATEGY_READ,
-    SCHEMA_COMPATIBILITY_STRATEGY_WRITE,
-    SUBSCRIPTION_AUTH_MODE_READ,
-    SUBSCRIPTION_AUTH_MODE_WRITE,
-    SUBSCRIPTION_EXPIRATION_TIME_READ,
-    SUBSCRIPTION_EXPIRATION_TIME_WRITE,
-    TTL_READ,
-    TTL_WRITE,
+import org.apache.pulsar.common.policies.data.PolicyName;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+public final class BiscuitPolicyOperation {
+
+    private static final Set<PolicyName> POLICIES = new HashSet<>(Arrays.stream(PolicyName.values()).toList());
+
+    private static final Set<PolicyName> POLICIES_WHITELISTED_WRITES = new HashSet<>(Arrays.asList(
+            // PolicyName.ALL,
+            // PolicyName.ANTI_AFFINITY,
+            PolicyName.AUTO_SUBSCRIPTION_CREATION,
+            PolicyName.AUTO_TOPIC_CREATION,
+            PolicyName.BACKLOG,
+            PolicyName.COMPACTION,
+            PolicyName.DELAYED_DELIVERY,
+            PolicyName.INACTIVE_TOPIC,
+            PolicyName.DEDUPLICATION,
+            // PolicyName.MAX_CONSUMERS,
+            // PolicyName.MAX_PRODUCERS,
+            PolicyName.DEDUPLICATION_SNAPSHOT,
+            PolicyName.MAX_UNACKED,
+            // PolicyName.MAX_SUBSCRIPTIONS,
+            // PolicyName.OFFLOAD,
+            PolicyName.PARTITION,
+            PolicyName.PERSISTENCE,
+            PolicyName.RATE,
+            PolicyName.RETENTION,
+            // PolicyName.REPLICATION,
+            // PolicyName.REPLICATION_RATE,
+            PolicyName.SCHEMA_COMPATIBILITY_STRATEGY,
+            PolicyName.SUBSCRIPTION_AUTH_MODE,
+            PolicyName.SUBSCRIPTION_EXPIRATION_TIME,
+            PolicyName.ENCRYPTION,
+            PolicyName.TTL
+            // PolicyName.MAX_TOPICS,
+            // PolicyName.RESOURCEGROUP,
+            // PolicyName.ENTRY_FILTERS,
+            // PolicyName.SHADOW_TOPIC,
+            // PolicyName.DISPATCHER_PAUSE_ON_ACK_STATE_PERSISTENT,
+    ));
+
+    public static final Set<String> WHITELISTED_POLICIES_ACTIONS = POLICIES.stream()
+            .flatMap(policy -> Arrays.stream(new String[]{String.format("%s_%s", policy.name().toUpperCase(), "READ"),
+                    POLICIES_WHITELISTED_WRITES.contains(policy) ?
+                            String.format("%s_%s", policy.name().toUpperCase(), "WRITE") : null}))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
 }
