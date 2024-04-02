@@ -106,6 +106,33 @@ public class AuthorizationProviderBiscuitTest {
     }
 
     @Test
+    public void testProduceAndConsumeOnDifferentNamespacesTopics() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace1 = "ns1";
+        String namespace2 = "ns2";
+        String topic = "topicTest";
+
+        Block block0 = new Block(0, symbols);
+        block0.add_fact(adminFact);
+        String ns1Consume = topicOperation(TopicName.get(tenant + "/" + namespace1 + "/" + topic), TopicOperation.CONSUME);
+        String ns2Produce = topicOperation(TopicName.get(tenant + "/" + namespace2 + "/" + topic), TopicOperation.PRODUCE);
+        block0.add_check(String.format("check if %s or %s", ns1Consume, ns2Produce));
+        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+
+        String authedBiscuit = authedBiscuit(root, biscuit);
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace1 + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace2 + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace1 + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace2 + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+    }
+
+    @Test
     public void testProduceAndNotConsumeAttenuatedOnTopic() throws Exception {
         SecureRandom rng = new SecureRandom();
         KeyPair root = new KeyPair(rng);
