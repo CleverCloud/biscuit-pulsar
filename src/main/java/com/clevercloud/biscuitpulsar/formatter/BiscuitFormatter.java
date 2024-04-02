@@ -120,8 +120,12 @@ public final class BiscuitFormatter {
         return namespaceFact(NamespaceName.get(tenant, namespace));
     }
 
+    public static String topicOperation(TopicName topic, TopicOperation operation) {
+        return topicFact(topic) + "," + topicOperationFact(operation);
+    }
+
     public static String topicOperationCheck(TopicName topic, TopicOperation operation) {
-        return "check if " + topicFact(topic) + "," + topicOperationFact(operation);
+        return "check if " + topicOperation(topic, operation);
     }
 
     public static String adminFact = "right(\"admin\")";
