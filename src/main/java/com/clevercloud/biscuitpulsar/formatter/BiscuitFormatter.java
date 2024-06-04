@@ -70,6 +70,14 @@ public final class BiscuitFormatter {
         return "topic_operation(" + topicOperationFragment(operation) + ")";
     }
 
+    public static String topicSubscriptionFragment(String subscription) {
+        return "\"" + subscription + "\"";
+    }
+
+    public static String topicSubscriptionFact(String subscription) {
+        return "subscription(" + topicSubscriptionFragment(subscription) + ")";
+    }
+
     public static String topicPolicyOperationFact(PolicyName policy, PolicyOperation operation) {
         return "topic_operation(\"" + policy.toString().toLowerCase() + "_" + operation.toString().toLowerCase() + "\")";
     }
@@ -124,8 +132,16 @@ public final class BiscuitFormatter {
         return topicFact(topic) + "," + topicOperationFact(operation);
     }
 
+    public static String topicOperation(TopicName topic, TopicOperation operation, String subscription) {
+        return topicFact(topic) + "," + topicOperationFact(operation) + "," + topicSubscriptionFact(subscription);
+    }
+
     public static String topicOperationCheck(TopicName topic, TopicOperation operation) {
         return "check if " + topicOperation(topic, operation);
+    }
+
+    public static String topicOperationCheck(TopicName topic, TopicOperation operation, String subscription) {
+        return "check if " + topicOperation(topic, operation, subscription);
     }
 
     public static String adminFact = "right(\"admin\")";

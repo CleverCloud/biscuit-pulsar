@@ -618,4 +618,71 @@ public class AuthorizationProviderBiscuitTest {
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" +topicWithPartitionTail), authedBiscuit, TopicOperation.PRODUCE, null).get());
     }
 
+    @Test
+    public void testConsumeOnTopicWithAuthorizedSubscription() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+        String subscription = "subNameTest";
+
+        Block block0 = new Block(0, symbols);
+        block0.add_fact(adminFact);
+        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME, subscription));
+        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+
+        String authedBiscuit = authedBiscuit(root, biscuit);
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        AuthenticationDataSource authenticationDataSource = new AuthenticationDataSource() {
+            @Override
+            public boolean hasSubscription() {
+                return true;
+            }
+
+            @Override
+            public String getSubscription() {
+                return subscription;
+            }
+        };
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, authenticationDataSource).get());
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, authenticationDataSource).get());
+    }
+
+    @Test
+    public void testConsumeOnTopicWithUnauthorizedSubscription() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+        String topic = "topicTest";
+        String subscription = "subNameTest";
+
+        Block block0 = new Block(0, symbols);
+        block0.add_fact(adminFact);
+        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME, subscription));
+        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+
+        String authedBiscuit = authedBiscuit(root, biscuit);
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        log.debug(biscuit.print());
+        AuthenticationDataSource authenticationDataSource = new AuthenticationDataSource() {
+            @Override
+            public boolean hasSubscription() {
+                return true;
+            }
+
+            @Override
+            public String getSubscription() {
+                return "wrongSubscriptionName";
+            }
+        };
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, authenticationDataSource).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, authenticationDataSource).get());
+    }
 }
