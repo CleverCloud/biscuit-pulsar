@@ -188,9 +188,23 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
             facts.add(topicOperationFact(TopicOperation.PRODUCE));
             facts.add(topicOperationFact(TopicOperation.CONSUME));
         }
-        Set<String> rules = Set.of("right($tenant, $namespace, $topic, $operation) <- topic($tenant, $namespace, $topic), topic_operation($operation)," + topicOperations + ".contains($operation)");
-        Set<String> checks = Set.of("check if right(" + topicFragment(topicName) + "," + topicOperationFragment(operation) + ")");
-        return authorize(() -> defaultProvider.allowTopicOperationAsync(topicName, role, operation, authData), true, "allowTopicOperationAsync(" + operation + " -> " + topicName + ")", role, authData, facts, rules, checks);
+
+        Set<String> rules = new HashSet<>();
+        Set<String> checks = new HashSet<>();
+        String actionLog;
+
+        if (authData == null || !authData.hasSubscription() || authData.getSubscription().isEmpty()) {
+            rules.add("right($tenant, $namespace, $topic, $operation) <- topic($tenant, $namespace, $topic), topic_operation($operation)," + topicOperations + ".contains($operation)");
+            checks.add("check if right(" + topicFragment(topicName) + "," + topicOperationFragment(operation) + ")");
+            actionLog = "allowTopicOperationAsync(" + operation + " -> " + topicName + ")";
+        } else {
+            String subscription = authData.getSubscription();
+            facts.add(topicSubscriptionFact(subscription));
+            rules.add("right($tenant, $namespace, $topic, $operation, $subscription) <- topic($tenant, $namespace, $topic), topic_operation($operation)," + topicOperations + ".contains($operation), subscription($subscription)");
+            checks.add("check if right(" + topicFragment(topicName) + "," + topicOperationFragment(operation) + "," + topicSubscriptionFragment(subscription) + ")");
+            actionLog = "allowTopicOperationAsync(" + operation + "-> " + topicName + " using subscription " + subscription + ")";
+        }
+        return authorize(() -> defaultProvider.allowTopicOperationAsync(topicName, role, operation, authData), true, actionLog, role, authData, facts, rules, checks);
     }
 
     @Override
