@@ -200,7 +200,7 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
             return "biscuit:" + biscuitB64Url;
         } catch (IllegalArgumentException | NoSuchAlgorithmException | SignatureException | InvalidKeyException |
                  Error e) {
-            log.error("Error during parsing biscuit from b64", e);
+            log.error("Error during parsing biscuit from b64, let's convert it to AuthenticationException", e);
             throw new AuthenticationException(e.toString());
         }
     }
