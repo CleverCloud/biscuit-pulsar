@@ -191,15 +191,16 @@ public class AuthenticationProviderBiscuit implements AuthenticationProvider {
     private String parseBiscuit(final String biscuitB64Url) throws AuthenticationException {
         log.trace("Biscuit to parse: {}", biscuitB64Url);
         try {
-            UnverifiedBiscuit biscuit = UnverifiedBiscuit.from_b64url(biscuitB64Url);
+            Biscuit biscuit = Biscuit.from_b64url(biscuitB64Url, AuthenticationProviderBiscuit.rootKey);
             Set<String> biscuitRevocationIdentifiers = biscuit.revocation_identifiers().stream().map(RevocationIdentifier::serialize_b64url).collect(Collectors.toSet());
             if (!Sets.intersection(revokedIdentifiers, biscuitRevocationIdentifiers).isEmpty()) {
                 throw new AuthenticationException("Biscuit has been revoked.");
             }
             log.trace("Deserialized biscuit");
             return "biscuit:" + biscuitB64Url;
-        } catch (IllegalArgumentException | Error e) {
-            e.printStackTrace();
+        } catch (IllegalArgumentException | NoSuchAlgorithmException | SignatureException | InvalidKeyException |
+                 Error e) {
+            log.error("Error during parsing biscuit from b64", e);
             throw new AuthenticationException(e.toString());
         }
     }
