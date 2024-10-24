@@ -177,4 +177,53 @@ public class AuthenticationProviderBiscuitTest {
         assertThat(subject, new StringStartsWith("biscuit:"));
         provider.close();
     }
+
+    @Test
+    public void testWrongKeyPair() throws Exception {
+        KeyPair root = new KeyPair("D283C7E436D89C544CC2B20C1028A7ADDC18FCED6386A6130465C17B996CD893");
+        KeyPair wrongRoot = new KeyPair("D283C7E436D89C544CC2B20C1028A7ADDC18FCED6386A6130465C17B996CD894");
+
+        LOGGER.info("ROOT KEY");
+        LOGGER.info(root.toHex());
+
+        LOGGER.info("ROOT PUBLICKEY");
+        LOGGER.info(hex(root.public_key().key.getAbyte()));
+
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        Block authority_builder = new Block(0, symbols);
+        authority_builder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
+
+        byte[] seed = {0, 0, 0, 0};
+        SecureRandom rng = new SecureRandom(seed);
+        Biscuit b = Biscuit.make(rng, wrongRoot, Biscuit.default_symbol_table(), authority_builder.build());
+
+        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
+
+        Properties properties = new Properties();
+        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
+
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        provider.initialize(conf);
+
+        String biscuit = b.serialize_b64url();
+
+        // Assert that authenticate throws an exception
+        assertThrows(AuthenticationException.class, () -> {
+            provider.authenticate(new AuthenticationDataSource() {
+                @Override
+                public boolean hasDataFromCommand() {
+                    return true;
+                }
+
+                @Override
+                public String getCommandData() {
+                    return biscuit;
+                }
+            });
+        });
+
+        provider.close();
+    }
 }
