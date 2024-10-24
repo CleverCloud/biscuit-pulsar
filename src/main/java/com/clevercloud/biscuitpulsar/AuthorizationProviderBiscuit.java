@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -237,6 +238,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     @Override
     public CompletableFuture<Void> grantPermissionAsync(TopicName topicName, Set<AuthAction> actions, String role, String authDataJson) {
         return defaultProvider.grantPermissionAsync(topicName, actions, role, authDataJson);
+    }
+
+    @Override
+    public CompletableFuture<Map<String, Set<AuthAction>>> getPermissionsAsync(NamespaceName namespaceName) {
+        return defaultProvider.getPermissionsAsync(namespaceName);
     }
 
     @Override
