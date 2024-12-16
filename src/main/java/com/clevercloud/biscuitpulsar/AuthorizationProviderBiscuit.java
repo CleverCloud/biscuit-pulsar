@@ -246,6 +246,11 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
+    public CompletableFuture<Map<String, Set<AuthAction>>> getPermissionsAsync(TopicName topicName) {
+        return defaultProvider.getPermissionsAsync(topicName);
+    }
+
+    @Override
     public void close() throws IOException {
         // noop
     }
