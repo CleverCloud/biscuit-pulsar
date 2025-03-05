@@ -545,6 +545,27 @@ public class AuthorizationProviderBiscuitTest {
     }
 
     @Test
+    public void testLookupIsNotOverrodeByProduceOrConsumeWithBiscuitV3Compatibility() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        KeyPair root = new KeyPair("005248AE3870664EFC914A287BD2DB70626316E2CD004FA138837E8430D9A5CF");
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+
+        // biscuit generated with biscuit-java v3.0.1 of testLookupIsNotOverrodeByProduceOrConsume test
+        Biscuit biscuit = Biscuit.from_b64url("EnYKDBgDIggKBggEEgIYDRIkCAASIOHcyKojONtsqsY1UjQQTQ3u3RT6b3lEYQ3qzBEemeaWGkDFlr56tGlo-Z1RloR1nScE13xMJWoOspcB5UP1FJ0Lt_0FCD4_3pccskLgDntQHAxc3ugF6Db8k4uUjs3EqJkLGs0BCmMKBXRvcGljCgp0ZW5hbnRUZXN0Cg1uYW1lc3BhY2VUZXN0Cg90b3BpY19vcGVyYXRpb24KBmxvb2t1cBgDMiQKIgoCCBsSEgiACBIDGIEIEgMYgggSAwiACBIICIMIEgMYhAgSJAgAEiAdRHtivWCRZ9IhUui2vkCFtCnCOQoGlgZ3QN1DAEc3BhpAI8SI62pQde-ZIjFX6qDV5rd-94_SRAk7EVGHmoY58ulf04dDX7jN4hIu28DE0Q0p3ebRxOwhuCCgabZl_NktBSIiCiAAUkiuOHBmTvyRSih70ttwYmMW4s0AT6E4g36EMNmlzw==", root.public_key());
+
+        String authedBiscuit = authedBiscuit(root, biscuit);
+
+        log.debug(biscuit.print());
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
+    }
+
+    @Test
     public void testAuthorizeConsumptionOnSpecifiedTopic() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         SecureRandom rng = new SecureRandom();
         KeyPair root = new KeyPair(rng);
