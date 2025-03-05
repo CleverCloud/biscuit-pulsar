@@ -68,10 +68,10 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
         String topic = "topicTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
@@ -93,10 +93,10 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
         String topic = "topicTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
@@ -116,12 +116,12 @@ public class AuthorizationProviderBiscuitTest {
         String namespace2 = "ns2";
         String topic = "topicTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         String ns1Consume = topicOperation(TopicName.get(tenant + "/" + namespace1 + "/" + topic), TopicOperation.CONSUME);
         String ns2Produce = topicOperation(TopicName.get(tenant + "/" + namespace2 + "/" + topic), TopicOperation.PRODUCE);
         block0.add_check(String.format("check if %s or %s", ns1Consume, ns2Produce));
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
@@ -142,9 +142,9 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
         String topic = "topicTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
 
         String authedRootBiscuit = authedBiscuit(root, rootBiscuit);
@@ -153,7 +153,7 @@ public class AuthorizationProviderBiscuitTest {
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         log.debug(biscuit.print());
@@ -171,10 +171,10 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
         String topic = "topicTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME));
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
@@ -193,9 +193,9 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
         String topic = "topicTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         
         String authedRootBiscuit = authedBiscuit(root, rootBiscuit);
@@ -204,7 +204,7 @@ public class AuthorizationProviderBiscuitTest {
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
@@ -221,10 +221,10 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
         
         //biscuit allowing "create topic" operation
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         block0.add_check("check if namespace_operation(\"create_topic\")");
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, rootBiscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
@@ -239,7 +239,7 @@ public class AuthorizationProviderBiscuitTest {
         //attenuate biscuit to limit access to a single tenant/namespace
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + namespaceFact(tenant, namespace));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String attenuatedBiscuit = authedBiscuit(root, biscuit);
         log.debug(biscuit.print());
@@ -260,10 +260,10 @@ public class AuthorizationProviderBiscuitTest {
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         block0.add_check("check if " + topicVariableFact(NamespaceName.get(tenant + "/" + namespace)) + ", topic_operation($operation), [\"produce\",\"consume\"].contains($operation)");
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         log.debug(biscuit.print());
@@ -288,13 +288,13 @@ public class AuthorizationProviderBiscuitTest {
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + topicVariableFact(tenant, namespace) + ", topic_operation($4)");
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         log.debug(biscuit.print());
@@ -315,13 +315,13 @@ public class AuthorizationProviderBiscuitTest {
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
@@ -375,9 +375,9 @@ public class AuthorizationProviderBiscuitTest {
         KeyPair root = new KeyPair(rng);
         SymbolTable symbols = Biscuit.default_symbol_table();
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         log.debug(biscuit.print());
@@ -400,20 +400,20 @@ public class AuthorizationProviderBiscuitTest {
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         // limit on ns tenant/namespace
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         // limit on tenant/namespace/PREFIX*
         String PREFIX = "INSTANCE_PREFIX_TO_DEFINE";
         Block block2 = biscuit.create_block();
         block2.add_check("check if " + topicVariableFact(tenant, namespace) + ", $topic.starts_with(\"" + PREFIX + "\")");
-        biscuit = biscuit.attenuate(rng, root, block2.build());
+        biscuit = biscuit.attenuate(rng, root, block2.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
 
@@ -435,15 +435,15 @@ public class AuthorizationProviderBiscuitTest {
         String namespace = "namespaceTest";
 
         // root token
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         // limit on tenant/namespace/PREFIX*
         String PREFIX = "PREFIX";
         Block block2 = rootBiscuit.create_block();
         block2.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.PRODUCE) + ", $topic.starts_with(\"" + PREFIX + "\")");
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block2.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block2.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
 
@@ -467,13 +467,13 @@ public class AuthorizationProviderBiscuitTest {
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.CONSUME));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
 
@@ -496,13 +496,13 @@ public class AuthorizationProviderBiscuitTest {
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.PRODUCE));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
 
@@ -525,13 +525,13 @@ public class AuthorizationProviderBiscuitTest {
         String tenant = "tenantTest";
         String namespace = "namespaceTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.LOOKUP));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
 
@@ -555,20 +555,20 @@ public class AuthorizationProviderBiscuitTest {
         String topic = "topicTest";
 
         // create the cluster root biscuit
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         // attenuate it to reduce its rights to one tenant/namespace only
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         // attenuate it to reduce its rights to consume on tenant/namespace/topic only
         TopicName topicName = TopicName.get(String.format("%s/%s/%s", tenant, namespace, topic));
         Block block2 = biscuit1.create_block();
         block2.add_check("check if " + topicFact(topicName) + "," + topicOperationFact(TopicOperation.CONSUME));
-        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build());
+        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit2);
 
@@ -591,20 +591,20 @@ public class AuthorizationProviderBiscuitTest {
         String topic = "topicTest";
 
         // create the cluster root biscuit
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         // attenuate it to reduce its rights to one tenant/namespace only
         Block block1 = rootBiscuit.create_block();
         block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build());
+        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build(symbols));
 
         // attenuate it to reduce its rights to consume on tenant/namespace/topic only
         TopicName topicName = TopicName.get(String.format("%s/%s/%s", tenant, namespace, topic));
         Block block2 = biscuit1.create_block();
         block2.add_check("check if " + topicFact(topicName) + "," + topicOperationFact(TopicOperation.CONSUME));
-        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build());
+        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit2);
 
@@ -629,10 +629,10 @@ public class AuthorizationProviderBiscuitTest {
         String topic = "topicTest";
         String subscription = "subNameTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME, subscription));
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
@@ -663,10 +663,10 @@ public class AuthorizationProviderBiscuitTest {
         String topic = "topicTest";
         String subscription = "subNameTest";
 
-        Block block0 = new Block(0, symbols);
+        Block block0 = new Block();
         block0.add_fact(adminFact);
         block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME, subscription));
-        Biscuit biscuit = Biscuit.make(rng, root, symbols, block0.build());
+        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
 
         String authedBiscuit = authedBiscuit(root, biscuit);
         AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();

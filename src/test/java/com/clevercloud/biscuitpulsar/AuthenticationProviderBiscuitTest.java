@@ -42,12 +42,12 @@ public class AuthenticationProviderBiscuitTest {
 
         SymbolTable symbols = Biscuit.default_symbol_table();
 
-        Block authorityBuilder = new Block(0, symbols);
+        Block authorityBuilder = new Block();
         authorityBuilder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
 
         byte[] seed = {0, 0, 0, 0};
         SecureRandom rng = new SecureRandom(seed);
-        Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authorityBuilder.build());
+        Biscuit b = Biscuit.make(rng, root, authorityBuilder.build(symbols));
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
 
@@ -126,12 +126,12 @@ public class AuthenticationProviderBiscuitTest {
 
         SymbolTable symbols = Biscuit.default_symbol_table();
 
-        Block authorityBuilder = new Block(0, symbols);
+        Block authorityBuilder = new Block();
         authorityBuilder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
 
         byte[] seed = {0, 0, 0, 0};
         SecureRandom rng = new SecureRandom(seed);
-        Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authorityBuilder.build());
+        Biscuit b = Biscuit.make(rng, root, authorityBuilder.build(symbols));
 
         HttpServletRequest servletRequest = mock(HttpServletRequest.class);
         doReturn(b.serialize_b64url()).when(servletRequest).getParameter("token");
@@ -161,12 +161,12 @@ public class AuthenticationProviderBiscuitTest {
 
         SymbolTable symbols = Biscuit.default_symbol_table();
 
-        Block authorityBuilder = new Block(0, symbols);
+        Block authorityBuilder = new Block();
         authorityBuilder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
 
         byte[] seed = {0, 0, 0, 0};
         SecureRandom rng = new SecureRandom(seed);
-        Biscuit b = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authorityBuilder.build());
+        Biscuit b = Biscuit.make(rng, root, authorityBuilder.build(symbols));
         HttpServletRequest servletRequest = mock(HttpServletRequest.class);
         doReturn("Bearer " + b.serialize_b64url()).when(servletRequest).getHeader("Authorization");
         doReturn("127.0.0.1").when(servletRequest).getRemoteAddr();
@@ -191,12 +191,12 @@ public class AuthenticationProviderBiscuitTest {
 
         SymbolTable symbols = Biscuit.default_symbol_table();
 
-        Block authorityBuilder = new Block(0, symbols);
+        Block authorityBuilder = new Block();
         authorityBuilder.add_fact(fact("right", Arrays.asList(s("topic"), s("public"), s("default"), s("test"), s("produce"))));
 
         byte[] seed = {0, 0, 0, 0};
         SecureRandom rng = new SecureRandom(seed);
-        Biscuit b = Biscuit.make(rng, wrongRoot, Biscuit.default_symbol_table(), authorityBuilder.build());
+        Biscuit b = Biscuit.make(rng, wrongRoot, authorityBuilder.build(symbols));
 
         AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
 
