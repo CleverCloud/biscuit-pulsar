@@ -24,7 +24,7 @@
 
     <!-- dependencies -->
     <biscuit-java.version>4.0.1</biscuit-java.version>
-    <logback.version>1.5.17</logback.version>
+    <logback.version>1.5.19</logback.version>
     <slf4j.version>2.0.17</slf4j.version>
     <protobuf.version>3.25.5</protobuf.version>
     <pulsar.version>3.2.1</pulsar.version>
