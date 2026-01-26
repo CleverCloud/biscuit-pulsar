@@ -31,7 +31,7 @@
     <vavr.version>0.10.3</vavr.version>
 
     <!-- test dependencies -->
-    <assertj-core.version>3.14.0</assertj-core.version>
+    <assertj-core.version>3.27.7</assertj-core.version>
     <junit.version>4.13.1</junit.version>
     <mockito.version>5.6.0</mockito.version>
   </properties>
