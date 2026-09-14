@@ -9,7 +9,7 @@
 
 `biscuit-pulsar` needs `protobuf` 3.25.x (the version pinned by both Pulsar and biscuit-java).
 
-Since 3.8.0 the plugins require Pulsar **4.x** brokers (they implement the cluster/broker
+Since 4.0.0 the plugins require Pulsar **4.x** brokers (they implement the cluster/broker
 authorization hooks Pulsar 4.0 introduced, so the classes no longer load on 3.x).
 
 ## Configuration
