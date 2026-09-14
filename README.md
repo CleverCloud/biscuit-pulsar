@@ -87,7 +87,7 @@ PulsarClient client = PulsarClient.builder()
 # unit tests + integration tests (a real Pulsar broker via Testcontainers, needs Docker) + build
 mvn clean install
 
-# integration tests against another broker image (CI runs 4.0.4, 4.0.11, 4.2.4 and a 5.x canary)
+# integration tests against another broker image (CI runs 4.0.4, 4.0.13, 4.2.4 and a 5.x canary)
 mvn clean install -Dpulsar.image=apachepulsar/pulsar:4.2.4
 
 # unit tests only
