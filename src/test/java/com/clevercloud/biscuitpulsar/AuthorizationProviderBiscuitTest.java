@@ -1,11 +1,5 @@
 package com.clevercloud.biscuitpulsar;
 
-import org.biscuitsec.biscuit.crypto.KeyPair;
-import org.biscuitsec.biscuit.datalog.SymbolTable;
-import org.biscuitsec.biscuit.error.Error;
-import org.biscuitsec.biscuit.token.Biscuit;
-import org.biscuitsec.biscuit.token.builder.Block;
-import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider;
 import org.apache.pulsar.client.admin.GrantTopicPermissionOptions;
@@ -18,434 +12,240 @@ import org.apache.pulsar.common.policies.data.NamespaceOperation;
 import org.apache.pulsar.common.policies.data.PolicyName;
 import org.apache.pulsar.common.policies.data.PolicyOperation;
 import org.apache.pulsar.common.policies.data.TopicOperation;
+import org.biscuitsec.biscuit.token.Biscuit;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.naming.AuthenticationException;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.security.*;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
-import static org.biscuitsec.biscuit.crypto.TokenSignature.hex;
+import static com.clevercloud.biscuitpulsar.BiscuitTestSupport.*;
 import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertTrue;
 
 public class AuthorizationProviderBiscuitTest {
-    static final Logger log = LoggerFactory.getLogger(AuthorizationProviderBiscuitTest.class);
+    private final BiscuitTestSupport support = BiscuitTestSupport.randomRoot();
+    private final AuthorizationProviderBiscuit provider = new AuthorizationProviderBiscuit();
 
-    private String authedBiscuit(KeyPair root, Biscuit biscuit) throws IOException, AuthenticationException {
-        AuthenticationProviderBiscuit provider = new AuthenticationProviderBiscuit();
-        Properties properties = new Properties();
-        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
-        ServiceConfiguration conf = new ServiceConfiguration();
-        conf.setProperties(properties);
-        provider.initialize(conf);
-
-        return provider.authenticate(new AuthenticationDataSource() {
-            @Override
-            public boolean hasDataFromCommand() {
-                return true;
-            }
-
-            @Override
-            public String getCommandData() {
-                try {
-                    return biscuit.serialize_b64url();
-                } catch (Error.FormatError.SerializationError e) {
-                    log.error("Can't deserialize biscuit due to: {}", e.getMessage());
-                    return "";
-                }
-            }
-        });
+    /** The usual tenant scope: one namespace and every topic in it. */
+    private String namespaceScope() {
+        return "check if " + namespaceFact(TENANT, NAMESPACE) + " or " + topicVariableFact(TENANT, NAMESPACE);
     }
 
+    private boolean topicOp(String role, String topic, TopicOperation operation) throws Exception {
+        return topicOp(role, topic, operation, null);
+    }
+
+    private boolean topicOp(String role, String topic, TopicOperation operation, AuthenticationDataSource authData) throws Exception {
+        return provider.allowTopicOperationAsync(TopicName.get(topic), role, operation, authData).get();
+    }
+
+    private boolean namespaceOp(String role, String namespace, NamespaceOperation operation) throws Exception {
+        return provider.allowNamespaceOperationAsync(NamespaceName.get(namespace), role, operation, null).get();
+    }
+
+    private boolean namespacePolicy(String role, String namespace, PolicyName policy, PolicyOperation operation) throws Exception {
+        return provider.allowNamespacePolicyOperationAsync(NamespaceName.get(namespace), policy, operation, role, null).get();
+    }
+
+    private boolean topicPolicy(String role, String topic, PolicyName policy, PolicyOperation operation) throws Exception {
+        return provider.allowTopicPolicyOperationAsync(TopicName.get(topic), role, policy, operation, null).get();
+    }
 
     @Test
     public void testAccessOnlyToValidData() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String role = support.authed(support.adminBiscuit(topicOperationCheck(TopicName.get(TOPIC_PATH), TopicOperation.PRODUCE)));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(biscuit.print());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/topicForbidden"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertTrue(topicOp(role, TOPIC_PATH, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/" + TOPIC, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/" + TOPIC, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, NS + "/topicForbidden", TopicOperation.PRODUCE));
     }
-    
 
     @Test
     public void testProduceAndNotConsumeOnTopic() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String role = support.authed(support.adminBiscuit(topicOperationCheck(TopicName.get(TOPIC_PATH), TopicOperation.PRODUCE)));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(biscuit.print());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertTrue(topicOp(role, TOPIC_PATH, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, TOPIC_PATH, TopicOperation.CONSUME));
     }
 
     @Test
     public void testProduceAndConsumeOnDifferentNamespacesTopics() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String ns1Topic = TENANT + "/ns1/" + TOPIC;
+        String ns2Topic = TENANT + "/ns2/" + TOPIC;
+        String ns1Consume = topicOperation(TopicName.get(ns1Topic), TopicOperation.CONSUME);
+        String ns2Produce = topicOperation(TopicName.get(ns2Topic), TopicOperation.PRODUCE);
+        String role = support.authed(support.adminBiscuit(String.format("check if %s or %s", ns1Consume, ns2Produce)));
 
-        String tenant = "tenantTest";
-        String namespace1 = "ns1";
-        String namespace2 = "ns2";
-        String topic = "topicTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        String ns1Consume = topicOperation(TopicName.get(tenant + "/" + namespace1 + "/" + topic), TopicOperation.CONSUME);
-        String ns2Produce = topicOperation(TopicName.get(tenant + "/" + namespace2 + "/" + topic), TopicOperation.PRODUCE);
-        block0.add_check(String.format("check if %s or %s", ns1Consume, ns2Produce));
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(biscuit.print());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace1 + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace2 + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace1 + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace2 + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertTrue(topicOp(role, ns1Topic, TopicOperation.CONSUME));
+        assertTrue(topicOp(role, ns2Topic, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, ns1Topic, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, ns2Topic, TopicOperation.CONSUME));
     }
 
     @Test
     public void testProduceAndNotConsumeAttenuatedOnTopic() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        Biscuit rootBiscuit = support.adminBiscuit();
+        String admin = support.authed(rootBiscuit);
+        assertTrue(topicOp(admin, TOPIC_PATH, TopicOperation.PRODUCE));
+        assertTrue(topicOp(admin, TOPIC_PATH, TopicOperation.CONSUME));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-
-        String authedRootBiscuit = authedBiscuit(root, rootBiscuit);
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.CONSUME, null).get());
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.PRODUCE));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        log.debug(biscuit.print());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+        String role = support.authed(support.attenuate(rootBiscuit, topicOperationCheck(TopicName.get(TOPIC_PATH), TopicOperation.PRODUCE)));
+        assertTrue(topicOp(role, TOPIC_PATH, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, TOPIC_PATH, TopicOperation.CONSUME));
     }
 
     @Test
     public void testConsumeAndNotProduceOnTopic() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String role = support.authed(support.adminBiscuit(topicOperationCheck(TopicName.get(TOPIC_PATH), TopicOperation.CONSUME)));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME));
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(biscuit.print());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertFalse(topicOp(role, TOPIC_PATH, TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, TOPIC_PATH, TopicOperation.CONSUME));
     }
 
     @Test
     public void testConsumerAndNotProduceAttenuatedOnTopic() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        Biscuit rootBiscuit = support.adminBiscuit();
+        String admin = support.authed(rootBiscuit);
+        assertTrue(topicOp(admin, TOPIC_PATH, TopicOperation.PRODUCE));
+        assertTrue(topicOp(admin, TOPIC_PATH, TopicOperation.CONSUME));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        
-        String authedRootBiscuit = authedBiscuit(root, rootBiscuit);
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedRootBiscuit, TopicOperation.CONSUME, null).get());
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
+        String role = support.authed(support.attenuate(rootBiscuit, topicOperationCheck(TopicName.get(TOPIC_PATH), TopicOperation.CONSUME)));
+        assertFalse(topicOp(role, TOPIC_PATH, TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, TOPIC_PATH, TopicOperation.CONSUME));
     }
 
     @Test
     public void testTopicCreation() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        // biscuit allowing the "create topic" operation anywhere
+        Biscuit rootBiscuit = support.adminBiscuit("check if namespace_operation(\"create_topic\")");
+        String role = support.authed(rootBiscuit);
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.CREATE_TOPIC));
+        assertFalse(namespaceOp(role, NS, NamespaceOperation.DELETE_TOPIC));
+        assertTrue(namespaceOp(role, TENANT + "/namespace123", NamespaceOperation.CREATE_TOPIC));
+        assertFalse(namespaceOp(role, TENANT + "/namespace123", NamespaceOperation.DELETE_TOPIC));
+        assertTrue(namespaceOp(role, "tenant123/" + NAMESPACE, NamespaceOperation.CREATE_TOPIC));
+        assertFalse(namespaceOp(role, "tenant123/" + NAMESPACE, NamespaceOperation.DELETE_TOPIC));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        
-        //biscuit allowing "create topic" operation
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        block0.add_check("check if namespace_operation(\"create_topic\")");
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, rootBiscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(rootBiscuit.print());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/namespace123"), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/namespace123"), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get("tenant123/" + namespace), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get("tenant123/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-
-        //attenuate biscuit to limit access to a single tenant/namespace
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + namespaceFact(tenant, namespace));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String attenuatedBiscuit = authedBiscuit(root, biscuit);
-        log.debug(biscuit.print());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), attenuatedBiscuit, NamespaceOperation.CREATE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), attenuatedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/namespace123"), attenuatedBiscuit, NamespaceOperation.CREATE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/namespace123"), attenuatedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get("tenant123/" + namespace), attenuatedBiscuit, NamespaceOperation.CREATE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get("tenant123/" + namespace), attenuatedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
+        // attenuate it to a single tenant/namespace
+        String attenuated = support.authed(support.attenuate(rootBiscuit, "check if " + namespaceFact(TENANT, NAMESPACE)));
+        assertTrue(namespaceOp(attenuated, NS, NamespaceOperation.CREATE_TOPIC));
+        assertFalse(namespaceOp(attenuated, NS, NamespaceOperation.DELETE_TOPIC));
+        assertFalse(namespaceOp(attenuated, TENANT + "/namespace123", NamespaceOperation.CREATE_TOPIC));
+        assertFalse(namespaceOp(attenuated, TENANT + "/namespace123", NamespaceOperation.DELETE_TOPIC));
+        assertFalse(namespaceOp(attenuated, "tenant123/" + NAMESPACE, NamespaceOperation.CREATE_TOPIC));
+        assertFalse(namespaceOp(attenuated, "tenant123/" + NAMESPACE, NamespaceOperation.DELETE_TOPIC));
     }
 
     @Test
     public void testReadWriteTopicInNamespace() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String role = support.authed(support.adminBiscuit("check if " + topicVariableFact(NamespaceName.get(NS)) + ", topic_operation($operation), [\"produce\",\"consume\"].contains($operation)"));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.CONSUME));
+        assertTrue(topicOp(role, NS + "/test123", TopicOperation.CONSUME));
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, NS + "/test123", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, TENANT + "/namespace123/test123", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenant123/" + NAMESPACE + "/test123", TopicOperation.PRODUCE));
 
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        block0.add_check("check if " + topicVariableFact(NamespaceName.get(tenant + "/" + namespace)) + ", topic_operation($operation), [\"produce\",\"consume\"].contains($operation)");
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        log.debug(biscuit.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespace123/test123"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenant123/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        
-        // Test any other operation which require more rights
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
+        // any other operation requires more rights
+        assertFalse(namespaceOp(role, NS, NamespaceOperation.DELETE_TOPIC));
     }
 
     @Test
-    public void testTopicOperation() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testTopicOperation() throws Exception {
+        String role = support.authed(support.attenuate(support.adminBiscuit(), "check if " + topicVariableFact(TENANT, NAMESPACE) + ", topic_operation($4)"));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.CONSUME));
 
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + topicVariableFact(tenant, namespace) + ", topic_operation($4)");
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        log.debug(biscuit.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
-        
-        // Test any other operation which require more rights
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
+        // any other operation requires more rights
+        assertFalse(namespaceOp(role, NS, NamespaceOperation.DELETE_TOPIC));
     }
 
     @Test
     public void testLimitations() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String role = support.authed(support.attenuate(support.adminBiscuit(), namespaceScope()));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
+        assertTrue(namespacePolicy(role, NS, PolicyName.COMPACTION, PolicyOperation.WRITE));
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.CREATE_TOPIC));
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.GET_TOPIC));
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.GET_TOPICS));
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.DELETE_TOPIC));
+        assertFalse(namespaceOp(role, TENANT + "/random-ns", NamespaceOperation.DELETE_TOPIC));
+        assertFalse(namespaceOp(role, "random-tenant/" + NAMESPACE, NamespaceOperation.DELETE_TOPIC));
+        assertFalse(namespaceOp(role, NS, NamespaceOperation.ADD_BUNDLE));
+        assertFalse(namespaceOp(role, NS, NamespaceOperation.DELETE_BUNDLE));
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.GET_BUNDLE));
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.CLEAR_BACKLOG));
+        assertTrue(namespaceOp(role, NS, NamespaceOperation.UNSUBSCRIBE));
+        assertTrue(namespacePolicy(role, NS, PolicyName.ALL, PolicyOperation.READ));
+        assertTrue(namespacePolicy(role, NS, PolicyName.TTL, PolicyOperation.READ));
+        assertFalse(namespacePolicy(role, NS, PolicyName.OFFLOAD, PolicyOperation.WRITE));
+        assertTrue(namespacePolicy(role, NS, PolicyName.SCHEMA_COMPATIBILITY_STRATEGY, PolicyOperation.WRITE));
+        assertFalse(namespacePolicy(role, NS, PolicyName.REPLICATION, PolicyOperation.WRITE));
+        assertTrue(namespacePolicy(role, NS, PolicyName.REPLICATION, PolicyOperation.READ));
 
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-
-        log.debug(biscuit.print());
-        assertTrue(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get(tenant + "/" + namespace), PolicyName.COMPACTION, PolicyOperation.WRITE, authedBiscuit, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.CREATE_TOPIC, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.GET_TOPIC, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.GET_TOPICS, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/random-ns"), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get("random-tenant/" + namespace), authedBiscuit, NamespaceOperation.DELETE_TOPIC, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.ADD_BUNDLE, null).get());
-        assertFalse(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.DELETE_BUNDLE, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.GET_BUNDLE, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.CLEAR_BACKLOG, null).get());
-        assertTrue(authorizationProvider.allowNamespaceOperationAsync(NamespaceName.get(tenant + "/" + namespace), authedBiscuit, NamespaceOperation.UNSUBSCRIBE, null).get());
-        assertTrue(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get(tenant + "/" + namespace), PolicyName.ALL, PolicyOperation.READ, authedBiscuit, null).get());
-        assertTrue(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get(tenant + "/" + namespace), PolicyName.TTL, PolicyOperation.READ, authedBiscuit, null).get());
-        assertFalse(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get(tenant + "/" + namespace), PolicyName.OFFLOAD, PolicyOperation.WRITE, authedBiscuit, null).get());
-        assertTrue(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get(tenant + "/" + namespace), PolicyName.SCHEMA_COMPATIBILITY_STRATEGY, PolicyOperation.WRITE, authedBiscuit, null).get());
-        assertFalse(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get(tenant + "/" + namespace), PolicyName.REPLICATION, PolicyOperation.WRITE, authedBiscuit, null).get());
-        assertTrue(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get(tenant + "/" + namespace), PolicyName.REPLICATION, PolicyOperation.READ, authedBiscuit, null).get());
-        AuthenticationDataSource authData = new AuthenticationDataSource() {
+        AuthenticationDataSource noSubscription = new AuthenticationDataSource() {
             @Override
             public String getSubscription() {
                 return null;
             }
         };
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, TENANT + "/random-ns/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, "random-tenant/random-ns/test", TopicOperation.CONSUME, noSubscription));
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.CONSUME, noSubscription));
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, NS + "/test123", TopicOperation.CONSUME, noSubscription));
+        assertTrue(topicOp(role, NS + "/test123", TopicOperation.PRODUCE));
+        assertTrue(topicPolicy(role, NS + "/test", PolicyName.ALL, PolicyOperation.READ));
+        assertFalse(topicPolicy(role, NS + "/test", PolicyName.ALL, PolicyOperation.WRITE));
 
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/random-ns/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("random-tenant/random-ns/test"), authedBiscuit, TopicOperation.CONSUME, authData).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, authData).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.CONSUME, authData).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test123"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicPolicyOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, PolicyName.ALL, PolicyOperation.READ, null).get());
-        assertFalse(authorizationProvider.allowTopicPolicyOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, PolicyName.ALL, PolicyOperation.WRITE, null).get());
-
-        Properties properties = new Properties();
-        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
-        ServiceConfiguration conf = new ServiceConfiguration();
-        conf.setProperties(properties);
-        assertFalse(authorizationProvider.isSuperUser(authedBiscuit, null, conf).get());
+        assertFalse(provider.isSuperUser(role, null, support.conf()).get());
     }
 
     @Test
     public void testClusterAndBrokerOperationsAreSuperUserOnly() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        Biscuit rootBiscuit = support.adminBiscuit();
+        String admin = support.authed(rootBiscuit);
+        String tenant = support.authed(support.attenuate(rootBiscuit, namespaceScope()));
 
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
+        assertTrue(provider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, admin, null).get());
+        assertTrue(provider.allowClusterPolicyOperationAsync("cluster", admin, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.WRITE, null).get());
+        assertTrue(provider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_OWNED_NAMESPACES, admin, null).get());
 
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + namespaceFact("tenantTest", "namespaceTest") + " or " + topicVariableFact("tenantTest", "namespaceTest"));
-        Biscuit attenuated = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String admin = authedBiscuit(root, rootBiscuit);
-        String tenant = authedBiscuit(root, attenuated);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-
-        assertTrue(authorizationProvider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, admin, null).get());
-        assertTrue(authorizationProvider.allowClusterPolicyOperationAsync("cluster", admin, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.WRITE, null).get());
-        assertTrue(authorizationProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_OWNED_NAMESPACES, admin, null).get());
-
-        assertFalse(authorizationProvider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, tenant, null).get());
-        assertFalse(authorizationProvider.allowClusterPolicyOperationAsync("cluster", tenant, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null).get());
-        assertFalse(authorizationProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_OWNED_NAMESPACES, tenant, null).get());
+        assertFalse(provider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, tenant, null).get());
+        assertFalse(provider.allowClusterPolicyOperationAsync("cluster", tenant, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null).get());
+        assertFalse(provider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_OWNED_NAMESPACES, tenant, null).get());
     }
 
     @Test
     public void testPulsar4PolicyNamesStayReadOnlyForTenants() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String role = support.authed(support.attenuate(support.adminBiscuit(), namespaceScope()));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-
-        NamespaceName ns = NamespaceName.get(tenant + "/" + namespace);
-        TopicName topic = TopicName.get(tenant + "/" + namespace + "/test");
         // policy names added by Pulsar 4.x: readable, never writable by an attenuated token
         for (PolicyName policy : new PolicyName[]{PolicyName.DISPATCHER_PAUSE_ON_ACK_STATE_PERSISTENT, PolicyName.ALLOW_CLUSTERS, PolicyName.ALLOW_CUSTOM_METRIC_LABELS, PolicyName.CLUSTER_MIGRATION, PolicyName.NAMESPACE_ISOLATION}) {
-            assertTrue(policy.name(), authorizationProvider.allowNamespacePolicyOperationAsync(ns, policy, PolicyOperation.READ, authedBiscuit, null).get());
-            assertTrue(policy.name(), authorizationProvider.allowTopicPolicyOperationAsync(topic, authedBiscuit, policy, PolicyOperation.READ, null).get());
-            assertFalse(policy.name(), authorizationProvider.allowNamespacePolicyOperationAsync(ns, policy, PolicyOperation.WRITE, authedBiscuit, null).get());
-            assertFalse(policy.name(), authorizationProvider.allowTopicPolicyOperationAsync(topic, authedBiscuit, policy, PolicyOperation.WRITE, null).get());
+            assertTrue(policy.name(), namespacePolicy(role, NS, policy, PolicyOperation.READ));
+            assertTrue(policy.name(), topicPolicy(role, NS + "/test", policy, PolicyOperation.READ));
+            assertFalse(policy.name(), namespacePolicy(role, NS, policy, PolicyOperation.WRITE));
+            assertFalse(policy.name(), topicPolicy(role, NS + "/test", policy, PolicyOperation.WRITE));
         }
     }
 
     @Test
     public void testNonBiscuitRolesAndPermissionManagementDelegateToDefaultProvider() throws Exception {
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
         PulsarAuthorizationProvider defaultProvider = mock(PulsarAuthorizationProvider.class);
         Field field = AuthorizationProviderBiscuit.class.getDeclaredField("defaultProvider");
         field.setAccessible(true);
-        field.set(authorizationProvider, defaultProvider);
+        field.set(provider, defaultProvider);
 
         // a non-biscuit role (e.g. JWT) reaches the default provider on the 4.x hooks and on isSuperUser
         String jwtRole = "jwt-user";
@@ -453,366 +253,157 @@ public class AuthorizationProviderBiscuitTest {
         when(defaultProvider.allowClusterPolicyOperationAsync("cluster", jwtRole, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null)).thenReturn(CompletableFuture.completedFuture(true));
         when(defaultProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_BROKERS, jwtRole, null)).thenReturn(CompletableFuture.completedFuture(true));
         when(defaultProvider.isSuperUser(jwtRole, null, null)).thenReturn(CompletableFuture.completedFuture(false));
-        assertTrue(authorizationProvider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, jwtRole, null).get());
-        assertTrue(authorizationProvider.allowClusterPolicyOperationAsync("cluster", jwtRole, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null).get());
-        assertTrue(authorizationProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_BROKERS, jwtRole, null).get());
-        assertFalse(authorizationProvider.isSuperUser(jwtRole, null, null).get());
+        assertTrue(provider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, jwtRole, null).get());
+        assertTrue(provider.allowClusterPolicyOperationAsync("cluster", jwtRole, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null).get());
+        assertTrue(provider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_BROKERS, jwtRole, null).get());
+        assertFalse(provider.isSuperUser(jwtRole, null, null).get());
 
         // permission management is the default provider's job, including the 4.x batch variants
         CompletableFuture<Void> done = CompletableFuture.completedFuture(null);
         List<GrantTopicPermissionOptions> grants = List.of();
         List<RevokeTopicPermissionOptions> revokes = List.of();
-        NamespaceName ns = NamespaceName.get("tenantTest/namespaceTest");
-        TopicName topic = TopicName.get("tenantTest/namespaceTest/test");
+        NamespaceName ns = NamespaceName.get(NS);
+        TopicName topic = TopicName.get(NS + "/test");
         when(defaultProvider.grantPermissionAsync(grants)).thenReturn(done);
         when(defaultProvider.revokePermissionAsync(revokes)).thenReturn(done);
         when(defaultProvider.revokePermissionAsync(ns, jwtRole)).thenReturn(done);
         when(defaultProvider.revokePermissionAsync(topic, jwtRole)).thenReturn(done);
         when(defaultProvider.removePermissionsAsync(topic)).thenReturn(done);
         when(defaultProvider.getSubscriptionPermissionsAsync(ns)).thenReturn(CompletableFuture.completedFuture(Map.of()));
-        assertSame(done, authorizationProvider.grantPermissionAsync(grants));
-        assertSame(done, authorizationProvider.revokePermissionAsync(revokes));
-        assertSame(done, authorizationProvider.revokePermissionAsync(ns, jwtRole));
-        assertSame(done, authorizationProvider.revokePermissionAsync(topic, jwtRole));
-        assertSame(done, authorizationProvider.removePermissionsAsync(topic));
-        assertTrue(authorizationProvider.getSubscriptionPermissionsAsync(ns).get().isEmpty());
+        assertSame(done, provider.grantPermissionAsync(grants));
+        assertSame(done, provider.revokePermissionAsync(revokes));
+        assertSame(done, provider.revokePermissionAsync(ns, jwtRole));
+        assertSame(done, provider.revokePermissionAsync(topic, jwtRole));
+        assertSame(done, provider.removePermissionsAsync(topic));
+        assertTrue(provider.getSubscriptionPermissionsAsync(ns).get().isEmpty());
     }
 
     @Test
-    public void testSuperUser() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error.SymbolTableOverlap, Error.FormatError, Error.Language, Error.Parser {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testSuperUser() throws Exception {
+        String admin = support.authed(support.adminBiscuit());
 
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        log.debug(biscuit.print());
-
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        Properties properties = new Properties();
-        properties.setProperty(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY, hex(root.public_key().key.getAbyte()));
-        ServiceConfiguration conf = new ServiceConfiguration();
-        conf.setProperties(properties);
-        assertTrue(authorizationProvider.isSuperUser(authedBiscuit, null, conf).get());
-        assertTrue(authorizationProvider.allowNamespacePolicyOperationAsync(NamespaceName.get("randomTenant/randomNamespace"), PolicyName.REPLICATION, PolicyOperation.WRITE, authedBiscuit, null).get());
+        assertTrue(provider.isSuperUser(admin, null, support.conf()).get());
+        assertTrue(namespacePolicy(admin, "randomTenant/randomNamespace", PolicyName.REPLICATION, PolicyOperation.WRITE));
     }
 
     @Test
-    public void testNsLimitationsThenPrefixLimitation() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testNsLimitationsThenPrefixLimitation() throws Exception {
+        String prefix = "INSTANCE_PREFIX_TO_DEFINE";
+        // limit to the namespace, then to tenant/namespace/PREFIX*
+        Biscuit biscuit = support.attenuate(support.adminBiscuit(), namespaceScope());
+        biscuit = support.attenuate(biscuit, "check if " + topicVariableFact(TENANT, NAMESPACE) + ", $topic.starts_with(\"" + prefix + "\")");
+        String role = support.authed(biscuit);
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        // limit on ns tenant/namespace
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        // limit on tenant/namespace/PREFIX*
-        String PREFIX = "INSTANCE_PREFIX_TO_DEFINE";
-        Block block2 = biscuit.create_block();
-        block2.add_check("check if " + topicVariableFact(tenant, namespace) + ", $topic.starts_with(\"" + PREFIX + "\")");
-        biscuit = biscuit.attenuate(rng, root, block2.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-
-        log.debug(biscuit.print());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + PREFIX), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + PREFIX + "-concat"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertFalse(topicOp(role, NS + "/test", TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, NS + "/" + prefix, TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, NS + "/" + prefix + "-concat", TopicOperation.PRODUCE));
     }
 
     @Test
-    public void testLimitProduceOnTopicStartsWith() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testLimitProduceOnTopicStartsWith() throws Exception {
+        String prefix = "PREFIX";
+        // limit to produce on tenant/namespace/PREFIX*
+        String role = support.authed(support.attenuate(support.adminBiscuit(), "check if " + topicVariableFact(TENANT, NAMESPACE) + "," + topicOperationFact(TopicOperation.PRODUCE) + ", $topic.starts_with(\"" + prefix + "\")"));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-
-        // root token
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        // limit on tenant/namespace/PREFIX*
-        String PREFIX = "PREFIX";
-        Block block2 = rootBiscuit.create_block();
-        block2.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.PRODUCE) + ", $topic.starts_with(\"" + PREFIX + "\")");
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block2.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-
-        log.debug(biscuit.print());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + PREFIX), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + PREFIX + "-concat"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/test"), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + PREFIX), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + PREFIX + "-concat"), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertFalse(topicOp(role, NS + "/test", TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, NS + "/" + prefix, TopicOperation.PRODUCE));
+        assertTrue(topicOp(role, NS + "/" + prefix + "-concat", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, NS + "/test", TopicOperation.CONSUME));
+        assertFalse(topicOp(role, NS + "/" + prefix, TopicOperation.CONSUME));
+        assertFalse(topicOp(role, NS + "/" + prefix + "-concat", TopicOperation.CONSUME));
     }
 
     @Test
-    public void testConsumeOverrideLookup() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testConsumeOverrideLookup() throws Exception {
+        String role = support.authed(support.attenuate(support.adminBiscuit(), "check if " + topicVariableFact(TENANT, NAMESPACE) + "," + topicOperationFact(TopicOperation.CONSUME)));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.CONSUME));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-
-        log.debug(biscuit.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.LOOKUP));
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.CONSUME));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/test", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/test", TopicOperation.PRODUCE));
     }
 
     @Test
-    public void testProduceOverrideLookup() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testProduceOverrideLookup() throws Exception {
+        String role = support.authed(support.attenuate(support.adminBiscuit(), "check if " + topicVariableFact(TENANT, NAMESPACE) + "," + topicOperationFact(TopicOperation.PRODUCE)));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.PRODUCE));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-
-        log.debug(biscuit.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.LOOKUP));
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/test", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/test", TopicOperation.PRODUCE));
     }
 
     @Test
-    public void testLookupIsNotOverrodeByProduceOrConsume() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testLookupIsNotOverrodeByProduceOrConsume() throws Exception {
+        String role = support.authed(support.attenuate(support.adminBiscuit(), "check if " + topicVariableFact(TENANT, NAMESPACE) + "," + topicOperationFact(TopicOperation.LOOKUP)));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + topicVariableFact(tenant, namespace) + "," + topicOperationFact(TopicOperation.LOOKUP));
-        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-
-        log.debug(biscuit.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
+        assertLookupOnly(role);
     }
 
     @Test
-    public void testLookupIsNotOverrodeByProduceOrConsumeWithBiscuitV3Compatibility() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        KeyPair root = new KeyPair("005248AE3870664EFC914A287BD2DB70626316E2CD004FA138837E8430D9A5CF");
+    public void testLookupIsNotOverrodeByProduceOrConsumeWithBiscuitV3Compatibility() throws Exception {
+        BiscuitTestSupport fixedRoot = BiscuitTestSupport.withRoot("005248AE3870664EFC914A287BD2DB70626316E2CD004FA138837E8430D9A5CF");
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
+        // biscuit generated with biscuit-java v3.0.1 of the testLookupIsNotOverrodeByProduceOrConsume test
+        Biscuit biscuit = Biscuit.from_b64url("EnYKDBgDIggKBggEEgIYDRIkCAASIOHcyKojONtsqsY1UjQQTQ3u3RT6b3lEYQ3qzBEemeaWGkDFlr56tGlo-Z1RloR1nScE13xMJWoOspcB5UP1FJ0Lt_0FCD4_3pccskLgDntQHAxc3ugF6Db8k4uUjs3EqJkLGs0BCmMKBXRvcGljCgp0ZW5hbnRUZXN0Cg1uYW1lc3BhY2VUZXN0Cg90b3BpY19vcGVyYXRpb24KBmxvb2t1cBgDMiQKIgoCCBsSEgiACBIDGIEIEgMYgggSAwiACBIICIMIEgMYhAgSJAgAEiAdRHtivWCRZ9IhUui2vkCFtCnCOQoGlgZ3QN1DAEc3BhpAI8SI62pQde-ZIjFX6qDV5rd-94_SRAk7EVGHmoY58ulf04dDX7jN4hIu28DE0Q0p3ebRxOwhuCCgabZl_NktBSIiCiAAUkiuOHBmTvyRSih70ttwYmMW4s0AT6E4g36EMNmlzw==", fixedRoot.root.public_key());
+        String role = fixedRoot.authed(biscuit);
 
-        // biscuit generated with biscuit-java v3.0.1 of testLookupIsNotOverrodeByProduceOrConsume test
-        Biscuit biscuit = Biscuit.from_b64url("EnYKDBgDIggKBggEEgIYDRIkCAASIOHcyKojONtsqsY1UjQQTQ3u3RT6b3lEYQ3qzBEemeaWGkDFlr56tGlo-Z1RloR1nScE13xMJWoOspcB5UP1FJ0Lt_0FCD4_3pccskLgDntQHAxc3ugF6Db8k4uUjs3EqJkLGs0BCmMKBXRvcGljCgp0ZW5hbnRUZXN0Cg1uYW1lc3BhY2VUZXN0Cg90b3BpY19vcGVyYXRpb24KBmxvb2t1cBgDMiQKIgoCCBsSEgiACBIDGIEIEgMYgggSAwiACBIICIMIEgMYhAgSJAgAEiAdRHtivWCRZ9IhUui2vkCFtCnCOQoGlgZ3QN1DAEc3BhpAI8SI62pQde-ZIjFX6qDV5rd-94_SRAk7EVGHmoY58ulf04dDX7jN4hIu28DE0Q0p3ebRxOwhuCCgabZl_NktBSIiCiAAUkiuOHBmTvyRSih70ttwYmMW4s0AT6E4g36EMNmlzw==", root.public_key());
+        assertLookupOnly(role);
+    }
 
-        String authedBiscuit = authedBiscuit(root, biscuit);
+    private void assertLookupOnly(String role) throws Exception {
+        assertTrue(topicOp(role, NS + "/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/test", TopicOperation.LOOKUP));
+        assertFalse(topicOp(role, NS + "/test", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, NS + "/test", TopicOperation.CONSUME));
+    }
 
-        log.debug(biscuit.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.LOOKUP, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + "test"), authedBiscuit, TopicOperation.CONSUME, null).get());
+    /** Root → one namespace → consume on one topic of it. */
+    private String consumeOnTopicOnly() throws Exception {
+        Biscuit namespaceOnly = support.attenuate(support.adminBiscuit(), namespaceScope());
+        return support.authed(support.attenuate(namespaceOnly, "check if " + topicFact(TopicName.get(TOPIC_PATH)) + "," + topicOperationFact(TopicOperation.CONSUME)));
     }
 
     @Test
-    public void testAuthorizeConsumptionOnSpecifiedTopic() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testAuthorizeConsumptionOnSpecifiedTopic() throws Exception {
+        String role = consumeOnTopicOnly();
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        // create the cluster root biscuit
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        // attenuate it to reduce its rights to one tenant/namespace only
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        // attenuate it to reduce its rights to consume on tenant/namespace/topic only
-        TopicName topicName = TopicName.get(String.format("%s/%s/%s", tenant, namespace, topic));
-        Block block2 = biscuit1.create_block();
-        block2.add_check("check if " + topicFact(topicName) + "," + topicOperationFact(TopicOperation.CONSUME));
-        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit2);
-
-        log.debug(biscuit2.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "topicForbidden"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        assertTrue(topicOp(role, TOPIC_PATH, TopicOperation.CONSUME));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/" + TOPIC, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/topicForbidden", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/" + TOPIC, TopicOperation.PRODUCE));
     }
 
     @Test
-    public void testAuthorizeConsumptionOnSpecifiedTopicPartioned() throws IOException, AuthenticationException, ExecutionException, InterruptedException, Error, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+    public void testAuthorizeConsumptionOnSpecifiedTopicPartioned() throws Exception {
+        String role = consumeOnTopicOnly();
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-
-        // create the cluster root biscuit
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        // attenuate it to reduce its rights to one tenant/namespace only
-        Block block1 = rootBiscuit.create_block();
-        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
-        Biscuit biscuit1 = rootBiscuit.attenuate(rng, root, block1.build(symbols));
-
-        // attenuate it to reduce its rights to consume on tenant/namespace/topic only
-        TopicName topicName = TopicName.get(String.format("%s/%s/%s", tenant, namespace, topic));
-        Block block2 = biscuit1.create_block();
-        block2.add_check("check if " + topicFact(topicName) + "," + topicOperationFact(TopicOperation.CONSUME));
-        Biscuit biscuit2 = biscuit1.attenuate(rng, root, block2.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit2);
-
-        log.debug(biscuit2.print());
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-
-        String topicWithPartitionTail = topic + "-partition-0";
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topicWithPartitionTail), authedBiscuit, TopicOperation.CONSUME, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/namespaceForbidden/" + topicWithPartitionTail), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" + "topicForbidden-partition-0"), authedBiscuit, TopicOperation.PRODUCE, null).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get("tenantForbidden/" + namespace + "/" +topicWithPartitionTail), authedBiscuit, TopicOperation.PRODUCE, null).get());
+        String partitioned = TOPIC + "-partition-0";
+        assertTrue(topicOp(role, NS + "/" + partitioned, TopicOperation.CONSUME));
+        assertFalse(topicOp(role, TENANT + "/namespaceForbidden/" + partitioned, TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/topicForbidden-partition-0", TopicOperation.PRODUCE));
+        assertFalse(topicOp(role, "tenantForbidden/" + NAMESPACE + "/" + partitioned, TopicOperation.PRODUCE));
     }
 
     @Test
     public void testConsumeOnTopicWithAuthorizedSubscription() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
-
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
         String subscription = "subNameTest";
+        String role = support.authed(support.adminBiscuit(topicOperationCheck(TopicName.get(TOPIC_PATH), TopicOperation.CONSUME, subscription)));
 
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME, subscription));
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(biscuit.print());
-        AuthenticationDataSource authenticationDataSource = new AuthenticationDataSource() {
-            @Override
-            public boolean hasSubscription() {
-                return true;
-            }
-
-            @Override
-            public String getSubscription() {
-                return subscription;
-            }
-        };
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, authenticationDataSource).get());
-        assertTrue(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, authenticationDataSource).get());
+        assertFalse(topicOp(role, TOPIC_PATH, TopicOperation.PRODUCE, subscription(subscription)));
+        assertTrue(topicOp(role, TOPIC_PATH, TopicOperation.CONSUME, subscription(subscription)));
     }
 
     @Test
     public void testConsumeOnTopicWithUnauthorizedSubscription() throws Exception {
-        SecureRandom rng = new SecureRandom();
-        KeyPair root = new KeyPair(rng);
-        SymbolTable symbols = Biscuit.default_symbol_table();
+        String role = support.authed(support.adminBiscuit(topicOperationCheck(TopicName.get(TOPIC_PATH), TopicOperation.CONSUME, "subNameTest")));
 
-        String tenant = "tenantTest";
-        String namespace = "namespaceTest";
-        String topic = "topicTest";
-        String subscription = "subNameTest";
-
-        Block block0 = new Block();
-        block0.add_fact(adminFact);
-        block0.add_check(topicOperationCheck(TopicName.get(tenant + "/" + namespace + "/" + topic), TopicOperation.CONSUME, subscription));
-        Biscuit biscuit = Biscuit.make(rng, root, block0.build(symbols));
-
-        String authedBiscuit = authedBiscuit(root, biscuit);
-        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
-        log.debug(biscuit.print());
-        AuthenticationDataSource authenticationDataSource = new AuthenticationDataSource() {
-            @Override
-            public boolean hasSubscription() {
-                return true;
-            }
-
-            @Override
-            public String getSubscription() {
-                return "wrongSubscriptionName";
-            }
-        };
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.PRODUCE, authenticationDataSource).get());
-        assertFalse(authorizationProvider.allowTopicOperationAsync(TopicName.get(tenant + "/" + namespace + "/" + topic), authedBiscuit, TopicOperation.CONSUME, authenticationDataSource).get());
+        assertFalse(topicOp(role, TOPIC_PATH, TopicOperation.PRODUCE, subscription("wrongSubscriptionName")));
+        assertFalse(topicOp(role, TOPIC_PATH, TopicOperation.CONSUME, subscription("wrongSubscriptionName")));
     }
 }
