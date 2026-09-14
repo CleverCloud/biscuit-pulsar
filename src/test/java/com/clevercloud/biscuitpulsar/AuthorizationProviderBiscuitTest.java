@@ -1,7 +1,9 @@
 package com.clevercloud.biscuitpulsar;
 
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider;
+import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.client.admin.GrantTopicPermissionOptions;
 import org.apache.pulsar.client.admin.RevokeTopicPermissionOptions;
 import org.apache.pulsar.common.naming.NamespaceName;
@@ -16,12 +18,15 @@ import org.biscuitsec.biscuit.token.Biscuit;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 import static com.clevercloud.biscuitpulsar.BiscuitTestSupport.*;
 import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -276,6 +281,39 @@ public class AuthorizationProviderBiscuitTest {
         assertSame(done, provider.revokePermissionAsync(topic, jwtRole));
         assertSame(done, provider.removePermissionsAsync(topic));
         assertTrue(provider.getSubscriptionPermissionsAsync(ns).get().isEmpty());
+    }
+
+    private static ServiceConfiguration confWith(String... keyValues) {
+        Properties properties = new Properties();
+        for (int i = 0; i < keyValues.length; i += 2) {
+            properties.setProperty(keyValues[i], keyValues[i + 1]);
+        }
+        ServiceConfiguration conf = new ServiceConfiguration();
+        conf.setProperties(properties);
+        return conf;
+    }
+
+    @Test
+    public void testRunLimitsAreReadFromConfWithDefaultsForAbsentOrBlankKeys() throws Exception {
+        PulsarResources resources = mock(PulsarResources.class);
+        AuthorizationProviderBiscuit fresh = new AuthorizationProviderBiscuit();
+
+        fresh.initialize(confWith(
+                AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_FACTS, "5000",
+                AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS, " 250 ",
+                AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_TIME, "30"), resources);
+        assertEquals(5000, fresh.runLimits().maxFacts);
+        assertEquals(250, fresh.runLimits().maxIterations);
+        assertEquals(Duration.ofMillis(30), fresh.runLimits().maxTime);
+
+        // a second initialize with blank (broker.conf "key=") and absent keys falls back to the defaults,
+        // not to the values of the previous call
+        fresh.initialize(confWith(
+                AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_FACTS, "",
+                AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_TIME, "  "), resources);
+        assertEquals(AuthorizationProviderBiscuit.DEFAULT_RUNLIMITS_MAX_FACTS, fresh.runLimits().maxFacts);
+        assertEquals(AuthorizationProviderBiscuit.DEFAULT_RUNLIMITS_MAX_ITERATIONS, fresh.runLimits().maxIterations);
+        assertEquals(Duration.ofMillis(AuthorizationProviderBiscuit.DEFAULT_RUNLIMITS_MAX_TIME_MILLIS), fresh.runLimits().maxTime);
     }
 
     @Test

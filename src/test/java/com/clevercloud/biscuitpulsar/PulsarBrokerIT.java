@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PulsarContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
@@ -41,6 +40,7 @@ import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.namespace
 import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.topicVariableFact;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Runs the built jar inside a real Pulsar standalone broker (Testcontainers) with both providers
@@ -80,11 +80,12 @@ public class PulsarBrokerIT {
                 .withEnv("PULSAR_PREFIX_authenticationProviders", AuthenticationProviderBiscuit.class.getName())
                 .withEnv("PULSAR_PREFIX_authorizationEnabled", "true")
                 .withEnv("PULSAR_PREFIX_authorizationProvider", AuthorizationProviderBiscuit.class.getName())
-                .withEnv("PULSAR_PREFIX_biscuitPublicRootKey", support.publicKeyHex())
-                .withEnv("PULSAR_PREFIX_biscuitSupportJWT", "false")
-                .withEnv("PULSAR_PREFIX_biscuitRunLimitsMaxFacts", "1000")
-                .withEnv("PULSAR_PREFIX_biscuitRunLimitsMaxIterations", "100")
-                .withEnv("PULSAR_PREFIX_biscuitRunLimitsMaxTimeMillis", "1000")
+                .withEnv(brokerConf(AuthenticationProviderBiscuit.CONF_BISCUIT_PUBLIC_ROOT_KEY), support.publicKeyHex())
+                .withEnv(brokerConf(AuthenticationProviderBiscuit.CONF_BISCUIT_SUPPORT_JWT), "false")
+                // the values the README recommends, distinct from the built-in 20 ms so the wiring is observable
+                .withEnv(brokerConf(AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_FACTS), "1000")
+                .withEnv(brokerConf(AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS), "100")
+                .withEnv(brokerConf(AuthorizationProviderBiscuit.CONF_BISCUIT_RUNLIMITS_MAX_TIME), "30")
                 // the broker's own client (system topics, standalone bootstrap) authenticates with the root token
                 .withEnv("PULSAR_PREFIX_brokerClientAuthenticationPlugin", "org.apache.pulsar.client.impl.auth.AuthenticationToken")
                 .withEnv("PULSAR_PREFIX_brokerClientAuthenticationParameters", "token:" + adminToken)
@@ -92,11 +93,9 @@ public class PulsarBrokerIT {
                 .withLogConsumer(new Slf4jLogConsumer(log).withPrefix("pulsar"))
                 // Testcontainers' default readiness probe is an unauthenticated GET on the admin API, which
                 // Pulsar's authentication filter answers with 401 once authentication is on
-                .waitingFor(new WaitAllStrategy()
-                        .withStrategy(Wait.forLogMessage("(?i).*messaging service is ready.*", 1))
-                        .withStrategy(Wait.forHttp("/admin/v2/clusters").forPort(PulsarContainer.BROKER_HTTP_PORT)
-                                .withHeader("Authorization", "Bearer " + adminToken)
-                                .forResponsePredicate("[\"standalone\"]"::equals))
+                .waitingFor(Wait.forHttp("/admin/v2/clusters").forPort(PulsarContainer.BROKER_HTTP_PORT)
+                        .withHeader("Authorization", "Bearer " + adminToken)
+                        .forResponsePredicate("[\"standalone\"]"::equals)
                         .withStartupTimeout(Duration.ofMinutes(3)));
         for (Path jar : brokerLibJars()) {
             pulsar.withCopyFileToContainer(MountableFile.forHostPath(jar), "/pulsar/lib/" + jar.getFileName());
@@ -110,6 +109,11 @@ public class PulsarBrokerIT {
             admin.topics().createNonPartitionedTopic(TOPIC);
             admin.topics().createNonPartitionedTopic(OTHER_TOPIC);
         }
+    }
+
+    /** The env var Pulsar's apply-config-from-env.py turns into {@code key=value} in standalone.conf. */
+    private static String brokerConf(String key) {
+        return "PULSAR_PREFIX_" + key;
     }
 
     /** The plugin jar plus the dependencies Pulsar 4 does not ship (see the README's install script). */
@@ -133,6 +137,11 @@ public class PulsarBrokerIT {
 
     private static PulsarClient client(String token) throws PulsarClientException {
         return PulsarClient.builder().serviceUrl(pulsar.getPulsarBrokerUrl()).authentication(new AuthenticationBiscuit(token)).build();
+    }
+
+    @Test
+    public void runLimitsFromBrokerConfAreApplied() {
+        assertTrue(pulsar.getLogs(), pulsar.getLogs().contains("Biscuit authorization run limits: maxFacts=1000, maxIterations=100, maxTime=PT0.03S"));
     }
 
     @Test

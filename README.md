@@ -15,12 +15,12 @@ authorization hooks Pulsar 4.0 introduced, so the classes no longer load on 3.x)
 ## Configuration
 
 The listed dependencies must be added to the `/lib` of the pulsar folder as jars (Pulsar 4 already ships
-`protobuf` and `re2j`; the integration tests install exactly this set):
+`protobuf` and `re2j`; the integration tests install these same artifacts, at the versions of `pom.xml`):
 
-- `eddsa`
-- `vavr`
-- `biscuit-java`
-- `biscuit-pulsar`
+- `net.i2p.crypto:eddsa`
+- `io.vavr:vavr`
+- `org.biscuitsec:biscuit` (biscuit-java)
+- `com.clever-cloud:biscuit-pulsar`
 
 We currently are using this script to put libs on pulsar nodes:
 
@@ -29,7 +29,7 @@ We currently are using this script to put libs on pulsar nodes:
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/net/i2p/crypto/eddsa/0.3.0/eddsa-0.3.0.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.7/vavr-0.10.7.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/<VERSION>/biscuit-java-<VERSION>.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/org/biscuitsec/biscuit/4.0.1/biscuit-4.0.1.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/<VERSION>/biscuit-pulsar-<VERSION>.jar"
 ```
 

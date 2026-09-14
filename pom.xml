@@ -23,6 +23,7 @@
     <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
     <maven-failsafe.version>3.6.0</maven-failsafe.version>
     <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
+    <maven-clean.version>3.5.0</maven-clean.version>
 
     <!-- dependencies -->
     <biscuit-java.version>4.0.1</biscuit-java.version>
@@ -132,7 +133,31 @@
         </configuration>
       </plugin>
       <!-- The jars the integration tests drop into the broker's lib/, i.e. what the README tells operators
-           to install next to biscuit-pulsar. Pulsar 4 already ships protobuf and re2j. -->
+           to install next to biscuit-pulsar. Pulsar 4 already ships protobuf and re2j. The directory is wiped
+           first (this clean execution is declared before the copy, so it runs first in the same phase), so a
+           dependency bump without `mvn clean` cannot leave two versions of a library in the broker. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean.version}</version>
+        <executions>
+          <execution>
+            <id>clean-broker-lib</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+            <configuration>
+              <excludeDefaultDirectories>true</excludeDefaultDirectories>
+              <filesets>
+                <fileset>
+                  <directory>${project.build.directory}/pulsar-lib</directory>
+                </fileset>
+              </filesets>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
