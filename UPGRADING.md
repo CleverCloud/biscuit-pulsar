@@ -50,9 +50,9 @@ Everything below applies to every node where the plugin is installed: brokers, a
 4. Start the node and check its log for these lines:
 
    ```text
-   AuthorizationProviderBiscuit - Biscuit authorization run limits: maxFacts=1000, maxIterations=100, maxTime=PT0.03S
-   AuthorizationService - com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit has been loaded.
-   AuthenticationProviderBiscuit - Loaded revocation list with 0 item(s).
+   com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit - Biscuit authorization run limits: maxFacts=1000, maxIterations=100, maxTime=PT0.03S
+   org.apache.pulsar.broker.authorization.AuthorizationService - com.clevercloud.biscuitpulsar.AuthorizationProviderBiscuit has been loaded.
+   com.clevercloud.biscuitpulsar.AuthenticationProviderBiscuit - Loaded revocation list with 0 item(s).
    ```
 
    The run limits line is new in 4.0.0, so it confirms the new jar is loaded and shows the limits in effect.
