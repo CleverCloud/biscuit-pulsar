@@ -51,19 +51,30 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
 
     public AuthorizationProviderBiscuit(ServiceConfiguration conf, PulsarResources pulsarResources)
             throws IOException {
+        this();
         initialize(conf, pulsarResources);
-        runLimits = new RunLimits(
-                Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_FACTS)),
-                Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS)),
-                Duration.ofMillis(Integer.parseInt((String) conf.getProperty(CONF_BISCUIT_RUNLIMITS_MAX_TIME)))
-        );
     }
 
+    /**
+     * Pulsar instantiates the provider through its no-arg constructor and then calls this, so the
+     * {@code biscuitRunLimits*} settings are read here; a missing key keeps the built-in default.
+     */
     @Override
     public void initialize(ServiceConfiguration conf, PulsarResources pulsarResources) throws IOException {
         this.conf = conf;
         this.pulsarResources = pulsarResources;
         defaultProvider = new PulsarAuthorizationProvider(conf, pulsarResources);
+        runLimits = new RunLimits(
+                intProperty(conf, CONF_BISCUIT_RUNLIMITS_MAX_FACTS, runLimits.maxFacts),
+                intProperty(conf, CONF_BISCUIT_RUNLIMITS_MAX_ITERATIONS, runLimits.maxIterations),
+                Duration.ofMillis(intProperty(conf, CONF_BISCUIT_RUNLIMITS_MAX_TIME, (int) runLimits.maxTime.toMillis()))
+        );
+        log.info("Biscuit authorization run limits: maxFacts={}, maxIterations={}, maxTime={}", runLimits.maxFacts, runLimits.maxIterations, runLimits.maxTime);
+    }
+
+    private static int intProperty(ServiceConfiguration conf, String key, int defaultValue) {
+        Object value = conf.getProperty(key);
+        return value == null ? defaultValue : Integer.parseInt(value.toString());
     }
 
     private Either<Exception, Authorizer> authorizerFromBiscuitB64Url(String role) {
