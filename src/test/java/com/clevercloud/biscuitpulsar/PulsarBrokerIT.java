@@ -93,7 +93,7 @@ public class PulsarBrokerIT {
                 // Testcontainers' default readiness probe is an unauthenticated GET on the admin API, which
                 // Pulsar's authentication filter answers with 401 once authentication is on
                 .waitingFor(new WaitAllStrategy()
-                        .withStrategy(Wait.forLogMessage(".*messaging service is ready.*", 1))
+                        .withStrategy(Wait.forLogMessage("(?i).*messaging service is ready.*", 1))
                         .withStrategy(Wait.forHttp("/admin/v2/clusters").forPort(PulsarContainer.BROKER_HTTP_PORT)
                                 .withHeader("Authorization", "Bearer " + adminToken)
                                 .forResponsePredicate("[\"standalone\"]"::equals))
