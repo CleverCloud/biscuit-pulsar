@@ -26,3 +26,47 @@ jobs:
           distribution: "temurin"
       - name: Build with Maven
         run: mvn -B package --file pom.xml
+
+  # The built jar inside a real broker, on every Pulsar line we care about.
+  # Support windows (https://pulsar.apache.org/contribute/release-policy/): 4.0 LTS active until
+  # 2026-10-21 and security-only until 2027-10-21; 4.1 ended 2026-03-08 (not tested); 4.2 ends 2026-09-24.
+  integration:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        pulsar:
+          - "4.0.4"   # what the platform runs (keep in sync with the deployed version)
+          - "4.0.13"  # latest patch of the 4.0 LTS line
+          - "4.2.4"   # latest release, the compile target in pom.xml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: "21"
+          distribution: "temurin"
+      - name: Integration tests against apachepulsar/pulsar:${{ matrix.pulsar }}
+        run: mvn -B verify -Dpulsar.image=apachepulsar/pulsar:${{ matrix.pulsar }}
+
+  # Early warning for the next Pulsar major: allowed to fail.
+  canary:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    strategy:
+      matrix:
+        pulsar:
+          - "5.0.0-M1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: "21"
+          distribution: "temurin"
+      - name: Integration tests against apachepulsar/pulsar:${{ matrix.pulsar }} (canary)
+        run: mvn -B verify -Dpulsar.image=apachepulsar/pulsar:${{ matrix.pulsar }}

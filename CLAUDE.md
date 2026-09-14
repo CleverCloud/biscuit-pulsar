@@ -12,12 +12,21 @@ Apache Pulsar plugins (Java 21, Maven, single module) that authenticate and auth
 ## Commands
 
 ```bash
-mvn clean install                          # build + run all tests (what CI does, via `mvn -B package`)
+mvn clean install                          # build + unit tests + integration tests (needs Docker)
+mvn clean install -DskipITs                # build + unit tests only (what CI's `build` job does via `mvn -B package`)
 mvn clean install -Dmaven.test.skip=true   # build only
-mvn test                                   # tests only
+mvn test                                   # unit tests only
 mvn test -Dtest=AuthorizationProviderBiscuitTest                          # one test class
 mvn test -Dtest=AuthorizationProviderBiscuitTest#testAccessOnlyToValidData # one test method
+mvn verify -Dpulsar.image=apachepulsar/pulsar:4.2.4   # integration tests against a given broker image
+mvn verify -Dit.test=PulsarBrokerIT#rootTokenIsSuperUser  # one integration test
 ```
+
+Integration tests are the `*IT.java` classes, run by failsafe after packaging: `PulsarBrokerIT` starts a
+Pulsar standalone container (Testcontainers) with the built jar and the README's lib jars copied into
+`/pulsar/lib`, both providers enabled through `PULSAR_PREFIX_*` env overrides, and a revocation list at
+`/etc/biscuit/revocation_list.hex.conf`. CI runs it as a matrix (production image, latest 4.0 patch,
+latest release) plus an allowed-to-fail canary on the next major's milestone.
 
 Tests are JUnit 4 (`org.junit.Test`), with AssertJ and Mockito available. There is no linter; the
 compiler runs with `-Xlint:all` so watch for new warnings. The compiler is also configured with
@@ -75,9 +84,10 @@ and delegate to the default provider otherwise. Permission management (grant, re
 the 4.x batch variants) is delegated to the default provider. Source/sink
 ops return `null` (unimplemented). Grant/revoke/getPermissions are delegated to the default provider.
 
-Run limits (`biscuitRunLimitsMaxFacts`, `...MaxIterations`, `...MaxTimeMillis`) are read from
-`ServiceConfiguration` only through the two-arg constructor; the no-arg constructor (used in tests)
-hard-codes defaults.
+Run limits (`biscuitRunLimitsMaxFacts`, `...MaxIterations`, `...MaxTimeMillis`) are read in
+`initialize()`, which is what Pulsar calls after the no-arg constructor. An absent or blank key takes the
+`DEFAULT_RUNLIMITS_*` constant (1000 facts, 100 iterations, 20 ms); the effective values are logged at
+startup and `PulsarBrokerIT` asserts that line.
 
 ### Datalog string building: `formatter/` and `operation/`
 
@@ -102,10 +112,12 @@ Pulsar client `Authentication` that sends the biscuit as command data and as an
 
 ## Dependency notes
 
-- `biscuit-java` is `org.biscuitsec:biscuit`; protobuf version must match what biscuit-java and
-  Pulsar expect (README pins 3.25.x). The deployed jar is dropped into Pulsar's `lib/` alongside
-  `vavr`, `protobuf-java` and `biscuit-java`, so keep transitive dependencies minimal and avoid
-  anything that clashes with the Pulsar classpath.
+- `biscuit-java` is `org.biscuitsec:biscuit` (the old `com.clever-cloud:biscuit-java` stops at 2.x);
+  protobuf must stay on the 3.25.x line Pulsar and biscuit-java are built against. The deployed jar is
+  dropped into Pulsar's `lib/` alongside `org.biscuitsec:biscuit`, `io.vavr:vavr` and
+  `net.i2p.crypto:eddsa` only; Pulsar 4 ships protobuf and re2j, so do not add those. That set is the
+  `copy-broker-lib` execution in `pom.xml` and the README's install script; keep the two in sync, and
+  keep transitive dependencies minimal to avoid clashes with the Pulsar classpath.
 - `pulsar.version` drives the `pulsar-client`, `pulsar-common` and `pulsar-broker-common` artifacts.
 - The provider overrides the cluster/broker authorization hooks added in Pulsar 4.0, so the built jar
   only loads on 4.x brokers (verified on 4.0.4 and 4.2.4; 3.x fails with `NoClassDefFoundError`).
