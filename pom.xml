@@ -16,24 +16,24 @@
     <maven.compiler.source>21</maven.compiler.source>
 
     <!-- plugins -->
-    <maven-gpg.version>1.6</maven-gpg.version>
-    <maven-source.version>2.2.1</maven-source.version>
-    <maven-javadoc.version>2.9.1</maven-javadoc.version>
-    <nexus-staging-maven.version>1.6.13</nexus-staging-maven.version>
-    <maven-compiler-plugin.version>3.10.0</maven-compiler-plugin.version>
+    <maven-gpg.version>3.2.8</maven-gpg.version>
+    <maven-source.version>3.4.0</maven-source.version>
+    <maven-javadoc.version>3.12.0</maven-javadoc.version>
+    <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
+    <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
 
     <!-- dependencies -->
     <biscuit-java.version>4.0.1</biscuit-java.version>
-    <logback.version>1.5.19</logback.version>
-    <slf4j.version>2.0.17</slf4j.version>
-    <protobuf.version>3.25.5</protobuf.version>
-    <pulsar.version>3.2.1</pulsar.version>
-    <vavr.version>0.10.3</vavr.version>
+    <logback.version>1.6.3</logback.version>
+    <slf4j.version>2.0.19</slf4j.version>
+    <protobuf.version>3.25.9</protobuf.version>
+    <pulsar.version>4.2.4</pulsar.version>
+    <vavr.version>0.10.7</vavr.version>
 
     <!-- test dependencies -->
-    <assertj-core.version>3.14.0</assertj-core.version>
-    <junit.version>4.13.1</junit.version>
-    <mockito.version>5.6.0</mockito.version>
+    <assertj-core.version>3.27.7</assertj-core.version>
+    <junit.version>4.13.2</junit.version>
+    <mockito.version>5.23.0</mockito.version>
   </properties>
 
   <licenses>
@@ -91,6 +91,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven-gpg.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -128,7 +129,7 @@
       <plugin>
         <groupId>org.sonatype.central</groupId>
         <artifactId>central-publishing-maven-plugin</artifactId>
-        <version>0.7.0</version>
+        <version>${central-publishing-maven-plugin.version}</version>
         <extensions>true</extensions>
         <configuration>
           <publishingServerId>central</publishingServerId>
@@ -161,7 +162,7 @@
           </execution>
         </executions>
         <configuration>
-          <additionalparam>-Xdoclint:none</additionalparam>
+          <doclint>none</doclint>
         </configuration>
       </plugin>
     </plugins>
