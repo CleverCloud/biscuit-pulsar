@@ -12,10 +12,12 @@
 Since 4.0.0 the plugins require Pulsar **4.x** brokers (they implement the cluster/broker
 authorization hooks Pulsar 4.0 introduced, so the classes no longer load on 3.x).
 
+Upgrading from 3.7.x: follow [UPGRADING.md](UPGRADING.md).
+
 ## Configuration
 
 The listed dependencies must be added to the `/lib` of the pulsar folder as jars (Pulsar 4 already ships
-`protobuf` and `re2j`; the integration tests install these same artifacts, at the versions of `pom.xml`):
+`protobuf`, `re2j` and `gson`; the integration tests install these same artifacts, at the versions of `pom.xml`):
 
 - `net.i2p.crypto:eddsa`
 - `io.vavr:vavr`

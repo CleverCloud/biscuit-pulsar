@@ -115,9 +115,11 @@ Pulsar client `Authentication` that sends the biscuit as command data and as an
 - `biscuit-java` is `org.biscuitsec:biscuit` (the old `com.clever-cloud:biscuit-java` stops at 2.x);
   protobuf must stay on the 3.25.x line Pulsar and biscuit-java are built against. The deployed jar is
   dropped into Pulsar's `lib/` alongside `org.biscuitsec:biscuit`, `io.vavr:vavr` and
-  `net.i2p.crypto:eddsa` only; Pulsar 4 ships protobuf and re2j, so do not add those. That set is the
+  `net.i2p.crypto:eddsa` only; Pulsar 4 ships protobuf, re2j and gson (biscuit's datalog parser needs gson at
+  runtime), so do not add those. That set is the
   `copy-broker-lib` execution in `pom.xml` and the README's install script; keep the two in sync, and
   keep transitive dependencies minimal to avoid clashes with the Pulsar classpath.
+- Changes that affect what operators install or configure go in `UPGRADING.md`, per version.
 - `pulsar.version` drives the `pulsar-client`, `pulsar-common` and `pulsar-broker-common` artifacts.
 - The provider overrides the cluster/broker authorization hooks added in Pulsar 4.0, so the built jar
   only loads on 4.x brokers (verified on 4.0.4 and 4.2.4; 3.x fails with `NoClassDefFoundError`).
