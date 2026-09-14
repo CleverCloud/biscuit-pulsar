@@ -7,7 +7,10 @@
 
 ## Requirements
 
-`biscuit-pulsar` needs `protobuf` 3.25.0.
+`biscuit-pulsar` needs `protobuf` 3.25.x (the version pinned by both Pulsar and biscuit-java).
+
+Since 3.8.0 the plugins require Pulsar **4.x** brokers (they implement the cluster/broker
+authorization hooks Pulsar 4.0 introduced, so the classes no longer load on 3.x).
 
 ## Configuration
 
@@ -24,8 +27,8 @@ We currently are using this script to put libs on pulsar nodes:
 #!/bin/bash
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/net/i2p/crypto/eddsa/0.3.0/eddsa-0.3.0.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.3/vavr-0.10.3.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.25.0/protobuf-java-3.25.0.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.7/vavr-0.10.7.jar"
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.25.9/protobuf-java-3.25.9.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/<VERSION>/biscuit-java-<VERSION>.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/<VERSION>/biscuit-pulsar-<VERSION>.jar"
 ```

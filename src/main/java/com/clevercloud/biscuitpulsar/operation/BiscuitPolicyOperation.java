@@ -44,6 +44,10 @@ public final class BiscuitPolicyOperation {
             // PolicyName.ENTRY_FILTERS,
             // PolicyName.SHADOW_TOPIC,
             // PolicyName.DISPATCHER_PAUSE_ON_ACK_STATE_PERSISTENT,
+            // PolicyName.ALLOW_CLUSTERS,
+            // PolicyName.ALLOW_CUSTOM_METRIC_LABELS,
+            // PolicyName.CLUSTER_MIGRATION,
+            // PolicyName.NAMESPACE_ISOLATION,
     ));
 
     public static final Set<String> WHITELISTED_POLICIES_ACTIONS = POLICIES.stream()
