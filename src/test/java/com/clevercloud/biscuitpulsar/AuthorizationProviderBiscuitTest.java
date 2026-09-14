@@ -7,6 +7,9 @@ import org.biscuitsec.biscuit.token.Biscuit;
 import org.biscuitsec.biscuit.token.builder.Block;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider;
+import org.apache.pulsar.client.admin.GrantTopicPermissionOptions;
+import org.apache.pulsar.client.admin.RevokeTopicPermissionOptions;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.common.policies.data.BrokerOperation;
@@ -21,6 +24,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.security.*;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -28,6 +35,9 @@ import java.util.concurrent.ExecutionException;
 import static org.biscuitsec.biscuit.crypto.TokenSignature.hex;
 import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.*;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertTrue;
 
 public class AuthorizationProviderBiscuitTest {
@@ -423,9 +433,49 @@ public class AuthorizationProviderBiscuitTest {
         // policy names added by Pulsar 4.x: readable, never writable by an attenuated token
         for (PolicyName policy : new PolicyName[]{PolicyName.DISPATCHER_PAUSE_ON_ACK_STATE_PERSISTENT, PolicyName.ALLOW_CLUSTERS, PolicyName.ALLOW_CUSTOM_METRIC_LABELS, PolicyName.CLUSTER_MIGRATION, PolicyName.NAMESPACE_ISOLATION}) {
             assertTrue(policy.name(), authorizationProvider.allowNamespacePolicyOperationAsync(ns, policy, PolicyOperation.READ, authedBiscuit, null).get());
+            assertTrue(policy.name(), authorizationProvider.allowTopicPolicyOperationAsync(topic, authedBiscuit, policy, PolicyOperation.READ, null).get());
             assertFalse(policy.name(), authorizationProvider.allowNamespacePolicyOperationAsync(ns, policy, PolicyOperation.WRITE, authedBiscuit, null).get());
             assertFalse(policy.name(), authorizationProvider.allowTopicPolicyOperationAsync(topic, authedBiscuit, policy, PolicyOperation.WRITE, null).get());
         }
+    }
+
+    @Test
+    public void testNonBiscuitRolesAndPermissionManagementDelegateToDefaultProvider() throws Exception {
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+        PulsarAuthorizationProvider defaultProvider = mock(PulsarAuthorizationProvider.class);
+        Field field = AuthorizationProviderBiscuit.class.getDeclaredField("defaultProvider");
+        field.setAccessible(true);
+        field.set(authorizationProvider, defaultProvider);
+
+        // a non-biscuit role (e.g. JWT) reaches the default provider on the 4.x hooks and on isSuperUser
+        String jwtRole = "jwt-user";
+        when(defaultProvider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, jwtRole, null)).thenReturn(CompletableFuture.completedFuture(true));
+        when(defaultProvider.allowClusterPolicyOperationAsync("cluster", jwtRole, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null)).thenReturn(CompletableFuture.completedFuture(true));
+        when(defaultProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_BROKERS, jwtRole, null)).thenReturn(CompletableFuture.completedFuture(true));
+        when(defaultProvider.isSuperUser(jwtRole, null, null)).thenReturn(CompletableFuture.completedFuture(false));
+        assertTrue(authorizationProvider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, jwtRole, null).get());
+        assertTrue(authorizationProvider.allowClusterPolicyOperationAsync("cluster", jwtRole, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null).get());
+        assertTrue(authorizationProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_BROKERS, jwtRole, null).get());
+        assertFalse(authorizationProvider.isSuperUser(jwtRole, null, null).get());
+
+        // permission management is the default provider's job, including the 4.x batch variants
+        CompletableFuture<Void> done = CompletableFuture.completedFuture(null);
+        List<GrantTopicPermissionOptions> grants = List.of();
+        List<RevokeTopicPermissionOptions> revokes = List.of();
+        NamespaceName ns = NamespaceName.get("tenantTest/namespaceTest");
+        TopicName topic = TopicName.get("tenantTest/namespaceTest/test");
+        when(defaultProvider.grantPermissionAsync(grants)).thenReturn(done);
+        when(defaultProvider.revokePermissionAsync(revokes)).thenReturn(done);
+        when(defaultProvider.revokePermissionAsync(ns, jwtRole)).thenReturn(done);
+        when(defaultProvider.revokePermissionAsync(topic, jwtRole)).thenReturn(done);
+        when(defaultProvider.removePermissionsAsync(topic)).thenReturn(done);
+        when(defaultProvider.getSubscriptionPermissionsAsync(ns)).thenReturn(CompletableFuture.completedFuture(Map.of()));
+        assertSame(done, authorizationProvider.grantPermissionAsync(grants));
+        assertSame(done, authorizationProvider.revokePermissionAsync(revokes));
+        assertSame(done, authorizationProvider.revokePermissionAsync(ns, jwtRole));
+        assertSame(done, authorizationProvider.revokePermissionAsync(topic, jwtRole));
+        assertSame(done, authorizationProvider.removePermissionsAsync(topic));
+        assertTrue(authorizationProvider.getSubscriptionPermissionsAsync(ns).get().isEmpty());
     }
 
     @Test

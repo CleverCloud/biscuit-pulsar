@@ -10,6 +10,8 @@ import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.broker.authorization.AuthorizationProvider;
 import org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider;
 import org.apache.pulsar.broker.resources.PulsarResources;
+import org.apache.pulsar.client.admin.GrantTopicPermissionOptions;
+import org.apache.pulsar.client.admin.RevokeTopicPermissionOptions;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.common.policies.data.*;
@@ -22,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -151,35 +154,28 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         return authorize(() -> defaultProvider.isSuperUser(role, authenticationData, serviceConfiguration), false, "isSuperUser", role, authenticationData, Set.of(), Set.of(), Set.of());
     }
 
+    // Tenant operations are super-user only for every role: non-biscuit roles are not delegated to the
+    // default provider's tenant-admin check.
     @Override
     public CompletableFuture<Boolean> allowTenantOperationAsync(String tenantName, String role, TenantOperation operation, AuthenticationDataSource authData) {
         return isSuperUser(role, authData, this.conf);
     }
 
-    // Cluster- and broker-level operations (Pulsar 4.x hooks) are super-user only for biscuit roles,
-    // as in Pulsar's own PulsarAuthorizationProvider; non-biscuit roles keep the default provider.
+    // Cluster-, broker- and cluster-policy-level operations (Pulsar 4.x hooks): super-user only for
+    // biscuit roles, as in Pulsar's own PulsarAuthorizationProvider; non-biscuit roles keep the default provider.
     @Override
     public CompletableFuture<Boolean> allowClusterOperationAsync(String clusterName, ClusterOperation operation, String role, AuthenticationDataSource authData) {
-        if (!role.startsWith("biscuit:")) {
-            return defaultProvider.allowClusterOperationAsync(clusterName, operation, role, authData);
-        }
-        return isSuperUser(role, authData, this.conf);
+        return authorize(() -> defaultProvider.allowClusterOperationAsync(clusterName, operation, role, authData), false, "allowClusterOperationAsync(" + operation + " -> " + clusterName + ")", role, authData, Set.of(), Set.of(), Set.of());
     }
 
     @Override
     public CompletableFuture<Boolean> allowClusterPolicyOperationAsync(String clusterName, String role, PolicyName policy, PolicyOperation operation, AuthenticationDataSource authData) {
-        if (!role.startsWith("biscuit:")) {
-            return defaultProvider.allowClusterPolicyOperationAsync(clusterName, role, policy, operation, authData);
-        }
-        return isSuperUser(role, authData, this.conf);
+        return authorize(() -> defaultProvider.allowClusterPolicyOperationAsync(clusterName, role, policy, operation, authData), false, "allowClusterPolicyOperationAsync(" + policy + "." + operation + " -> " + clusterName + ")", role, authData, Set.of(), Set.of(), Set.of());
     }
 
     @Override
     public CompletableFuture<Boolean> allowBrokerOperationAsync(String clusterName, String brokerId, BrokerOperation operation, String role, AuthenticationDataSource authData) {
-        if (!role.startsWith("biscuit:")) {
-            return defaultProvider.allowBrokerOperationAsync(clusterName, brokerId, operation, role, authData);
-        }
-        return isSuperUser(role, authData, this.conf);
+        return authorize(() -> defaultProvider.allowBrokerOperationAsync(clusterName, brokerId, operation, role, authData), false, "allowBrokerOperationAsync(" + operation + " -> " + clusterName + "/" + brokerId + ")", role, authData, Set.of(), Set.of(), Set.of());
     }
 
     @Override
@@ -274,6 +270,36 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     @Override
     public CompletableFuture<Map<String, Set<AuthAction>>> getPermissionsAsync(TopicName topicName) {
         return defaultProvider.getPermissionsAsync(topicName);
+    }
+
+    @Override
+    public CompletableFuture<Void> grantPermissionAsync(List<GrantTopicPermissionOptions> options) {
+        return defaultProvider.grantPermissionAsync(options);
+    }
+
+    @Override
+    public CompletableFuture<Void> revokePermissionAsync(List<RevokeTopicPermissionOptions> options) {
+        return defaultProvider.revokePermissionAsync(options);
+    }
+
+    @Override
+    public CompletableFuture<Void> revokePermissionAsync(NamespaceName namespace, String role) {
+        return defaultProvider.revokePermissionAsync(namespace, role);
+    }
+
+    @Override
+    public CompletableFuture<Void> revokePermissionAsync(TopicName topicName, String role) {
+        return defaultProvider.revokePermissionAsync(topicName, role);
+    }
+
+    @Override
+    public CompletableFuture<Void> removePermissionsAsync(TopicName topicName) {
+        return defaultProvider.removePermissionsAsync(topicName);
+    }
+
+    @Override
+    public CompletableFuture<Map<String, Set<String>>> getSubscriptionPermissionsAsync(NamespaceName namespaceName) {
+        return defaultProvider.getSubscriptionPermissionsAsync(namespaceName);
     }
 
     @Override
