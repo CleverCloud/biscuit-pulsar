@@ -21,6 +21,8 @@
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
     <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+    <maven-failsafe.version>3.6.0</maven-failsafe.version>
+    <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
 
     <!-- dependencies -->
     <biscuit-java.version>4.0.1</biscuit-java.version>
@@ -34,6 +36,9 @@
     <assertj-core.version>3.27.7</assertj-core.version>
     <junit.version>4.13.2</junit.version>
     <mockito.version>5.23.0</mockito.version>
+    <testcontainers.version>1.21.4</testcontainers.version>
+    <!-- broker image the integration tests (src/test/java/**/*IT.java) start; override with -Dpulsar.image=... -->
+    <pulsar.image>apachepulsar/pulsar:4.0.4</pulsar.image>
   </properties>
 
   <licenses>
@@ -125,6 +130,47 @@
             <arg>-Xlint:all,-options,-path</arg>
           </compilerArgs>
         </configuration>
+      </plugin>
+      <!-- The jars the integration tests drop into the broker's lib/, i.e. what the README tells operators
+           to install next to biscuit-pulsar. Pulsar 4 already ships protobuf and re2j. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>copy-broker-lib</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <includeArtifactIds>biscuit,vavr,eddsa</includeArtifactIds>
+              <outputDirectory>${project.build.directory}/pulsar-lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Integration tests (*IT.java) start a real broker with Testcontainers; skip with -DskipITs. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe.version}</version>
+        <configuration>
+          <systemPropertyVariables>
+            <pulsar.image>${pulsar.image}</pulsar.image>
+            <biscuitPulsar.jar>${project.build.directory}/${project.build.finalName}.jar</biscuitPulsar.jar>
+            <biscuitPulsar.lib>${project.build.directory}/pulsar-lib</biscuitPulsar.lib>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.sonatype.central</groupId>
@@ -236,6 +282,18 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>${mockito.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>pulsar</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pulsar</groupId>
+      <artifactId>pulsar-client-admin</artifactId>
+      <version>${pulsar.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

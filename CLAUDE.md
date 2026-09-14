@@ -12,12 +12,21 @@ Apache Pulsar plugins (Java 21, Maven, single module) that authenticate and auth
 ## Commands
 
 ```bash
-mvn clean install                          # build + run all tests (what CI does, via `mvn -B package`)
+mvn clean install                          # build + unit tests + integration tests (needs Docker)
+mvn clean install -DskipITs                # build + unit tests only (what CI's `build` job does via `mvn -B package`)
 mvn clean install -Dmaven.test.skip=true   # build only
-mvn test                                   # tests only
+mvn test                                   # unit tests only
 mvn test -Dtest=AuthorizationProviderBiscuitTest                          # one test class
 mvn test -Dtest=AuthorizationProviderBiscuitTest#testAccessOnlyToValidData # one test method
+mvn verify -Dpulsar.image=apachepulsar/pulsar:4.2.4   # integration tests against a given broker image
+mvn verify -Dit.test=PulsarBrokerIT#rootTokenIsSuperUser  # one integration test
 ```
+
+Integration tests are the `*IT.java` classes, run by failsafe after packaging: `PulsarBrokerIT` starts a
+Pulsar standalone container (Testcontainers) with the built jar and the README's lib jars copied into
+`/pulsar/lib`, both providers enabled through `PULSAR_PREFIX_*` env overrides, and a revocation list at
+`/etc/biscuit/revocation_list.hex.conf`. CI runs it as a matrix (production image, latest 4.0 patch,
+latest release) plus an allowed-to-fail canary on the next major's milestone.
 
 Tests are JUnit 4 (`org.junit.Test`), with AssertJ and Mockito available. There is no linter; the
 compiler runs with `-Xlint:all` so watch for new warnings. The compiler is also configured with

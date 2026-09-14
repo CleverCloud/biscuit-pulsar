@@ -14,10 +14,11 @@ authorization hooks Pulsar 4.0 introduced, so the classes no longer load on 3.x)
 
 ## Configuration
 
-The listed dependencies can be necessary to add to the `/lib` of pulsar folder as jars:
+The listed dependencies must be added to the `/lib` of the pulsar folder as jars (Pulsar 4 already ships
+`protobuf` and `re2j`; the integration tests install exactly this set):
 
+- `eddsa`
 - `vavr`
-- `protobuf`
 - `biscuit-java`
 - `biscuit-pulsar`
 
@@ -28,7 +29,6 @@ We currently are using this script to put libs on pulsar nodes:
 
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/net/i2p/crypto/eddsa/0.3.0/eddsa-0.3.0.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.7/vavr-0.10.7.jar"
-wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.25.9/protobuf-java-3.25.9.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-java/<VERSION>/biscuit-java-<VERSION>.jar"
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/<VERSION>/biscuit-pulsar-<VERSION>.jar"
 ```
@@ -84,8 +84,14 @@ PulsarClient client = PulsarClient.builder()
 ## Development
 
 ```bash
-# run all tests and build
+# unit tests + integration tests (a real Pulsar broker via Testcontainers, needs Docker) + build
 mvn clean install
+
+# integration tests against another broker image (CI runs 4.0.4, 4.0.11, 4.2.4 and a 5.x canary)
+mvn clean install -Dpulsar.image=apachepulsar/pulsar:4.2.4
+
+# unit tests only
+mvn clean install -DskipITs
 
 # build without tests
 mvn clean install -Dmaven.test.skip=true
