@@ -9,6 +9,8 @@ import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
+import org.apache.pulsar.common.policies.data.BrokerOperation;
+import org.apache.pulsar.common.policies.data.ClusterOperation;
 import org.apache.pulsar.common.policies.data.NamespaceOperation;
 import org.apache.pulsar.common.policies.data.PolicyName;
 import org.apache.pulsar.common.policies.data.PolicyOperation;
@@ -367,6 +369,63 @@ public class AuthorizationProviderBiscuitTest {
         ServiceConfiguration conf = new ServiceConfiguration();
         conf.setProperties(properties);
         assertFalse(authorizationProvider.isSuperUser(authedBiscuit, null, conf).get());
+    }
+
+    @Test
+    public void testClusterAndBrokerOperationsAreSuperUserOnly() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        Block block0 = new Block();
+        block0.add_fact(adminFact);
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
+
+        Block block1 = rootBiscuit.create_block();
+        block1.add_check("check if " + namespaceFact("tenantTest", "namespaceTest") + " or " + topicVariableFact("tenantTest", "namespaceTest"));
+        Biscuit attenuated = rootBiscuit.attenuate(rng, root, block1.build(symbols));
+
+        String admin = authedBiscuit(root, rootBiscuit);
+        String tenant = authedBiscuit(root, attenuated);
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+
+        assertTrue(authorizationProvider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, admin, null).get());
+        assertTrue(authorizationProvider.allowClusterPolicyOperationAsync("cluster", admin, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.WRITE, null).get());
+        assertTrue(authorizationProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_OWNED_NAMESPACES, admin, null).get());
+
+        assertFalse(authorizationProvider.allowClusterOperationAsync("cluster", ClusterOperation.GET_CLUSTER, tenant, null).get());
+        assertFalse(authorizationProvider.allowClusterPolicyOperationAsync("cluster", tenant, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null).get());
+        assertFalse(authorizationProvider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_OWNED_NAMESPACES, tenant, null).get());
+    }
+
+    @Test
+    public void testPulsar4PolicyNamesStayReadOnlyForTenants() throws Exception {
+        SecureRandom rng = new SecureRandom();
+        KeyPair root = new KeyPair(rng);
+        SymbolTable symbols = Biscuit.default_symbol_table();
+
+        String tenant = "tenantTest";
+        String namespace = "namespaceTest";
+
+        Block block0 = new Block();
+        block0.add_fact(adminFact);
+        Biscuit rootBiscuit = Biscuit.make(rng, root, block0.build(symbols));
+
+        Block block1 = rootBiscuit.create_block();
+        block1.add_check("check if " + namespaceFact(tenant, namespace) + " or " + topicVariableFact(tenant, namespace));
+        Biscuit biscuit = rootBiscuit.attenuate(rng, root, block1.build(symbols));
+
+        String authedBiscuit = authedBiscuit(root, biscuit);
+        AuthorizationProviderBiscuit authorizationProvider = new AuthorizationProviderBiscuit();
+
+        NamespaceName ns = NamespaceName.get(tenant + "/" + namespace);
+        TopicName topic = TopicName.get(tenant + "/" + namespace + "/test");
+        // policy names added by Pulsar 4.x: readable, never writable by an attenuated token
+        for (PolicyName policy : new PolicyName[]{PolicyName.DISPATCHER_PAUSE_ON_ACK_STATE_PERSISTENT, PolicyName.ALLOW_CLUSTERS, PolicyName.ALLOW_CUSTOM_METRIC_LABELS, PolicyName.CLUSTER_MIGRATION, PolicyName.NAMESPACE_ISOLATION}) {
+            assertTrue(policy.name(), authorizationProvider.allowNamespacePolicyOperationAsync(ns, policy, PolicyOperation.READ, authedBiscuit, null).get());
+            assertFalse(policy.name(), authorizationProvider.allowNamespacePolicyOperationAsync(ns, policy, PolicyOperation.WRITE, authedBiscuit, null).get());
+            assertFalse(policy.name(), authorizationProvider.allowTopicPolicyOperationAsync(topic, authedBiscuit, policy, PolicyOperation.WRITE, null).get());
+        }
     }
 
     @Test

@@ -156,6 +156,32 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         return isSuperUser(role, authData, this.conf);
     }
 
+    // Cluster- and broker-level operations (Pulsar 4.x hooks) are super-user only for biscuit roles,
+    // as in Pulsar's own PulsarAuthorizationProvider; non-biscuit roles keep the default provider.
+    @Override
+    public CompletableFuture<Boolean> allowClusterOperationAsync(String clusterName, ClusterOperation operation, String role, AuthenticationDataSource authData) {
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowClusterOperationAsync(clusterName, operation, role, authData);
+        }
+        return isSuperUser(role, authData, this.conf);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> allowClusterPolicyOperationAsync(String clusterName, String role, PolicyName policy, PolicyOperation operation, AuthenticationDataSource authData) {
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowClusterPolicyOperationAsync(clusterName, role, policy, operation, authData);
+        }
+        return isSuperUser(role, authData, this.conf);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> allowBrokerOperationAsync(String clusterName, String brokerId, BrokerOperation operation, String role, AuthenticationDataSource authData) {
+        if (!role.startsWith("biscuit:")) {
+            return defaultProvider.allowBrokerOperationAsync(clusterName, brokerId, operation, role, authData);
+        }
+        return isSuperUser(role, authData, this.conf);
+    }
+
     @Override
     public CompletableFuture<Boolean> allowNamespaceOperationAsync(NamespaceName namespaceName, String role, NamespaceOperation operation, AuthenticationDataSource authData) {
         Set<String> facts = Set.of(

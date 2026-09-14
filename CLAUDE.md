@@ -69,7 +69,8 @@ authorized iff it is admin **and** every check in its attenuation blocks is sati
 facts.
 
 Special cases: `LOOKUP` additionally injects `PRODUCE` and `CONSUME` operation facts (a token that can
-produce or consume may look up). Tenant operations and function ops are super-user only. Source/sink
+produce or consume may look up). Tenant, cluster, broker and cluster-policy operations, and function
+ops, are super-user only for biscuit roles (non-biscuit roles go to the default provider). Source/sink
 ops return `null` (unimplemented). Grant/revoke/getPermissions are delegated to the default provider.
 
 Run limits (`biscuitRunLimitsMaxFacts`, `...MaxIterations`, `...MaxTimeMillis`) are read from
@@ -104,3 +105,5 @@ Pulsar client `Authentication` that sends the biscuit as command data and as an
   `vavr`, `protobuf-java` and `biscuit-java`, so keep transitive dependencies minimal and avoid
   anything that clashes with the Pulsar classpath.
 - `pulsar.version` drives the `pulsar-client`, `pulsar-common` and `pulsar-broker-common` artifacts.
+- The provider overrides the cluster/broker authorization hooks added in Pulsar 4.0, so the built jar
+  only loads on 4.x brokers (verified on 4.0.4 and 4.2.4; 3.x fails with `NoClassDefFoundError`).
