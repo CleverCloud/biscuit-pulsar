@@ -64,7 +64,7 @@ Everything below applies to every node where the plugin is installed: brokers, a
    A key that is absent or blank keeps its old default. A value you set, such as the 30 ms from the
    README's example, now takes effect. If authorization times out, it is denied.
 4. **Check for stored Pulsar permissions**, with the commands of [From 4.0.0 to 4.0.1](#before-you-upgrade).
-   3.7.1 accepted grants but could not revoke them, and 4.0.1 refuses both. If one is stored, upgrade to 4.0.0
+   3.7.1 accepted grants but could not revoke namespace or topic grants, and 4.0.1 refuses both. If one is stored, upgrade to 4.0.0
    first, revoke it there, then move to 4.0.1.
 
 ### Upgrade a node
