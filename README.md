@@ -70,6 +70,13 @@ sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" proxy.conf
 sed -i -e "s/@@BISCUIT_PUBLIC_ROOT_KEY@@/$1/" standalone.conf
 ```
 
+## Permissions
+
+Authorization is carried by the biscuit tokens. Pulsar's own permission management is disabled: every grant
+and revoke call (`pulsar-admin namespaces grant-permission`, `topics grant-permission`, subscription
+permissions, and the batch calls on topics) answers `405 Method Not Allowed`, including for the cluster root
+token. Permission reads still answer.
+
 ## Revocation list
 
 Revoked biscuit must have their revocation ids contained in `/etc/biscuit/revocation_list.hex.conf`, one revocation per line in hexadecimals. [Here is an example](https://raw.githubusercontent.com/CleverCloud/biscuit-pulsar/master/src/test/resources/revocation_list.hex.conf).

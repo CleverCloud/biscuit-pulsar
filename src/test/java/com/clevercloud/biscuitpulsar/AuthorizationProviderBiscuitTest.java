@@ -8,6 +8,7 @@ import org.apache.pulsar.client.admin.GrantTopicPermissionOptions;
 import org.apache.pulsar.client.admin.RevokeTopicPermissionOptions;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
+import org.apache.pulsar.common.policies.data.AuthAction;
 import org.apache.pulsar.common.policies.data.BrokerOperation;
 import org.apache.pulsar.common.policies.data.ClusterOperation;
 import org.apache.pulsar.common.policies.data.NamespaceOperation;
@@ -22,15 +23,20 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.clevercloud.biscuitpulsar.BiscuitTestSupport.*;
 import static com.clevercloud.biscuitpulsar.formatter.BiscuitFormatter.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertTrue;
 
@@ -245,12 +251,17 @@ public class AuthorizationProviderBiscuitTest {
         }
     }
 
-    @Test
-    public void testNonBiscuitRolesAndPermissionManagementDelegateToDefaultProvider() throws Exception {
+    private PulsarAuthorizationProvider mockDefaultProvider() throws Exception {
         PulsarAuthorizationProvider defaultProvider = mock(PulsarAuthorizationProvider.class);
         Field field = AuthorizationProviderBiscuit.class.getDeclaredField("defaultProvider");
         field.setAccessible(true);
         field.set(provider, defaultProvider);
+        return defaultProvider;
+    }
+
+    @Test
+    public void testNonBiscuitRolesDelegateToDefaultProvider() throws Exception {
+        PulsarAuthorizationProvider defaultProvider = mockDefaultProvider();
 
         // a non-biscuit role (e.g. JWT) reaches the default provider on the 4.x hooks and on isSuperUser
         String jwtRole = "jwt-user";
@@ -262,25 +273,43 @@ public class AuthorizationProviderBiscuitTest {
         assertTrue(provider.allowClusterPolicyOperationAsync("cluster", jwtRole, PolicyName.NAMESPACE_ISOLATION, PolicyOperation.READ, null).get());
         assertTrue(provider.allowBrokerOperationAsync("cluster", "broker-1", BrokerOperation.LIST_BROKERS, jwtRole, null).get());
         assertFalse(provider.isSuperUser(jwtRole, null, null).get());
+    }
 
-        // permission management is the default provider's job, including the 4.x batch variants
-        CompletableFuture<Void> done = CompletableFuture.completedFuture(null);
-        List<GrantTopicPermissionOptions> grants = List.of();
-        List<RevokeTopicPermissionOptions> revokes = List.of();
+    private static void assertRefused(CompletableFuture<?> future) {
+        ExecutionException refused = assertThrows(ExecutionException.class, future::get);
+        assertEquals(AuthorizationProviderBiscuit.PERMISSION_MANAGEMENT_DISABLED, refused.getCause().getMessage());
+    }
+
+    @Test
+    public void testPulsarPermissionManagementIsRefusedAndNeverStored() throws Exception {
+        PulsarAuthorizationProvider defaultProvider = mockDefaultProvider();
+        String role = "someone";
         NamespaceName ns = NamespaceName.get(NS);
         TopicName topic = TopicName.get(NS + "/test");
-        when(defaultProvider.grantPermissionAsync(grants)).thenReturn(done);
-        when(defaultProvider.revokePermissionAsync(revokes)).thenReturn(done);
-        when(defaultProvider.revokePermissionAsync(ns, jwtRole)).thenReturn(done);
-        when(defaultProvider.revokePermissionAsync(topic, jwtRole)).thenReturn(done);
-        when(defaultProvider.removePermissionsAsync(topic)).thenReturn(done);
-        when(defaultProvider.getSubscriptionPermissionsAsync(ns)).thenReturn(CompletableFuture.completedFuture(Map.of()));
-        assertSame(done, provider.grantPermissionAsync(grants));
-        assertSame(done, provider.revokePermissionAsync(revokes));
-        assertSame(done, provider.revokePermissionAsync(ns, jwtRole));
-        assertSame(done, provider.revokePermissionAsync(topic, jwtRole));
-        assertSame(done, provider.removePermissionsAsync(topic));
-        assertTrue(provider.getSubscriptionPermissionsAsync(ns).get().isEmpty());
+
+        // every write is refused, whatever the caller, and never reaches Pulsar's permission store
+        assertRefused(provider.grantPermissionAsync(ns, Set.of(AuthAction.produce), role, null));
+        assertRefused(provider.grantPermissionAsync(topic, Set.of(AuthAction.produce), role, null));
+        assertRefused(provider.grantPermissionAsync(List.<GrantTopicPermissionOptions>of()));
+        assertRefused(provider.grantSubscriptionPermissionAsync(ns, "sub", Set.of(role), null));
+        assertRefused(provider.revokePermissionAsync(ns, role));
+        assertRefused(provider.revokePermissionAsync(topic, role));
+        assertRefused(provider.revokePermissionAsync(List.<RevokeTopicPermissionOptions>of()));
+        assertRefused(provider.revokeSubscriptionPermissionAsync(ns, "sub", role, null));
+        // topic deletion has nothing to clean up
+        assertNull(provider.removePermissionsAsync(topic).get());
+        verifyNoInteractions(defaultProvider);
+
+        // reads stay truthful, so a leftover ACL remains visible
+        CompletableFuture<Map<String, Set<AuthAction>>> nsPermissions = CompletableFuture.completedFuture(Map.of("legacy", Set.of(AuthAction.consume)));
+        CompletableFuture<Map<String, Set<AuthAction>>> topicPermissions = CompletableFuture.completedFuture(Map.of());
+        CompletableFuture<Map<String, Set<String>>> subscriptionPermissions = CompletableFuture.completedFuture(Map.of());
+        when(defaultProvider.getPermissionsAsync(ns)).thenReturn(nsPermissions);
+        when(defaultProvider.getPermissionsAsync(topic)).thenReturn(topicPermissions);
+        when(defaultProvider.getSubscriptionPermissionsAsync(ns)).thenReturn(subscriptionPermissions);
+        assertSame(nsPermissions, provider.getPermissionsAsync(ns));
+        assertSame(topicPermissions, provider.getPermissionsAsync(topic));
+        assertSame(subscriptionPermissions, provider.getSubscriptionPermissionsAsync(ns));
     }
 
     private static ServiceConfiguration confWith(String... keyValues) {

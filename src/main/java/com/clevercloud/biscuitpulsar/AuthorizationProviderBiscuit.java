@@ -264,25 +264,58 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
         return authorize(() -> defaultProvider.allowTopicPolicyOperationAsync(topicName, role, policy, operation, authData), true, "allowTopicPolicyOperationAsync(" + policy + "." + operation + " -> " + topicName + ")", role, authData, facts, rules, checks);
     }
 
-    // those management functions will be performed outside of the authorization provider
+    // Permission management. Authorization is carried by the biscuit bearer tokens, so Pulsar's own
+    // permission store (role ACLs) is never written through this provider: every grant and revoke is refused,
+    // for every caller. Reads stay delegated: they never create or widen a permission, and they keep any
+    // leftover ACL visible (a leftover still authorizes non-biscuit roles through the default provider).
+
+    static final String PERMISSION_MANAGEMENT_DISABLED =
+            "Pulsar permission management is disabled by biscuit-pulsar: authorization is carried by biscuit tokens";
+
     @Override
     public CompletableFuture<Void> grantPermissionAsync(NamespaceName namespace, Set<AuthAction> actions, String role, String authDataJson) {
-        return defaultProvider.grantPermissionAsync(namespace, actions, role, authDataJson);
-    }
-
-    @Override
-    public CompletableFuture<Void> grantSubscriptionPermissionAsync(NamespaceName namespace, String subscriptionName, Set<String> roles, String authDataJson) {
-        return defaultProvider.grantSubscriptionPermissionAsync(namespace, subscriptionName, roles, authDataJson);
-    }
-
-    @Override
-    public CompletableFuture<Void> revokeSubscriptionPermissionAsync(NamespaceName namespace, String subscriptionName, String role, String authDataJson) {
-        return defaultProvider.revokeSubscriptionPermissionAsync(namespace, subscriptionName, role, authDataJson);
+        return permissionManagementRefused("grant on namespace " + namespace);
     }
 
     @Override
     public CompletableFuture<Void> grantPermissionAsync(TopicName topicName, Set<AuthAction> actions, String role, String authDataJson) {
-        return defaultProvider.grantPermissionAsync(topicName, actions, role, authDataJson);
+        return permissionManagementRefused("grant on topic " + topicName);
+    }
+
+    @Override
+    public CompletableFuture<Void> grantPermissionAsync(List<GrantTopicPermissionOptions> options) {
+        return permissionManagementRefused("batch grant on topics");
+    }
+
+    @Override
+    public CompletableFuture<Void> grantSubscriptionPermissionAsync(NamespaceName namespace, String subscriptionName, Set<String> roles, String authDataJson) {
+        return permissionManagementRefused("grant on subscription " + subscriptionName + " of " + namespace);
+    }
+
+    @Override
+    public CompletableFuture<Void> revokePermissionAsync(NamespaceName namespace, String role) {
+        return permissionManagementRefused("revoke on namespace " + namespace);
+    }
+
+    @Override
+    public CompletableFuture<Void> revokePermissionAsync(TopicName topicName, String role) {
+        return permissionManagementRefused("revoke on topic " + topicName);
+    }
+
+    @Override
+    public CompletableFuture<Void> revokePermissionAsync(List<RevokeTopicPermissionOptions> options) {
+        return permissionManagementRefused("batch revoke on topics");
+    }
+
+    @Override
+    public CompletableFuture<Void> revokeSubscriptionPermissionAsync(NamespaceName namespace, String subscriptionName, String role, String authDataJson) {
+        return permissionManagementRefused("revoke on subscription " + subscriptionName + " of " + namespace);
+    }
+
+    /** Topic deletion cleanup: nothing to clean, since no ACL is written through this provider. */
+    @Override
+    public CompletableFuture<Void> removePermissionsAsync(TopicName topicName) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -296,33 +329,34 @@ public class AuthorizationProviderBiscuit implements AuthorizationProvider {
     }
 
     @Override
-    public CompletableFuture<Void> grantPermissionAsync(List<GrantTopicPermissionOptions> options) {
-        return defaultProvider.grantPermissionAsync(options);
-    }
-
-    @Override
-    public CompletableFuture<Void> revokePermissionAsync(List<RevokeTopicPermissionOptions> options) {
-        return defaultProvider.revokePermissionAsync(options);
-    }
-
-    @Override
-    public CompletableFuture<Void> revokePermissionAsync(NamespaceName namespace, String role) {
-        return defaultProvider.revokePermissionAsync(namespace, role);
-    }
-
-    @Override
-    public CompletableFuture<Void> revokePermissionAsync(TopicName topicName, String role) {
-        return defaultProvider.revokePermissionAsync(topicName, role);
-    }
-
-    @Override
-    public CompletableFuture<Void> removePermissionsAsync(TopicName topicName) {
-        return defaultProvider.removePermissionsAsync(topicName);
-    }
-
-    @Override
     public CompletableFuture<Map<String, Set<String>>> getSubscriptionPermissionsAsync(NamespaceName namespaceName) {
         return defaultProvider.getSubscriptionPermissionsAsync(namespaceName);
+    }
+
+    private static <T> CompletableFuture<T> permissionManagementRefused(String operation) {
+        log.warn("Refused Pulsar permission management ({}): authorization is carried by biscuit tokens", operation);
+        return CompletableFuture.failedFuture(methodNotAllowed(PERMISSION_MANAGEMENT_DISABLED));
+    }
+
+    /**
+     * An exception the broker answers with 405 Method Not Allowed and this message. The admin endpoints keep the
+     * status of a JAX-RS WebApplicationException, but map IllegalStateException to a misleading 409 "Concurrent
+     * modification" and anything else to a 500. The broker's own RestException is built reflectively because its
+     * JAX-RS base class is javax.ws.rs on Pulsar 4 and jakarta.ws.rs on Pulsar 5, so the plugin cannot reference
+     * either at compile time. Outside a broker (unit tests) this falls back to UnsupportedOperationException.
+     */
+    static RuntimeException methodNotAllowed(String message) {
+        try {
+            Object exception = Class.forName("org.apache.pulsar.broker.web.RestException")
+                    .getConstructor(int.class, String.class)
+                    .newInstance(405, message);
+            if (exception instanceof RuntimeException runtimeException) {
+                return runtimeException;
+            }
+        } catch (ReflectiveOperationException | LinkageError e) {
+            // not running inside a broker
+        }
+        return new UnsupportedOperationException(message);
     }
 
     @Override

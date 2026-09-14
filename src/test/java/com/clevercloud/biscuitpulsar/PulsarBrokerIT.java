@@ -17,6 +17,7 @@ import org.biscuitsec.biscuit.token.RevocationIdentifier;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PulsarContainer;
@@ -155,14 +156,32 @@ public class PulsarBrokerIT {
         }
     }
 
-    /** Pulsar 4.0's batch grant/revoke hooks: they used to fall through to the interface default and answer 409. */
+    /** Authorization is carried by biscuits: Pulsar's own permission store is never written, even by the root token. */
     @Test
-    public void rootTokenCanGrantAndRevokeOnTopicsInBatch() throws Exception {
+    public void permissionManagementIsRefusedEvenForTheRootToken() throws Exception {
         try (PulsarAdmin admin = admin(adminToken)) {
-            admin.namespaces().grantPermissionOnTopics(List.of(GrantTopicPermissionOptions.builder().topic(TOPIC).role("someone").actions(Set.of(AuthAction.produce)).build()));
-            assertEquals(Set.of(AuthAction.produce), admin.topics().getPermissions(TOPIC).get("someone"));
-            admin.namespaces().revokePermissionOnTopics(List.of(RevokeTopicPermissionOptions.builder().topic(TOPIC).role("someone").build()));
-            assertEquals(null, admin.topics().getPermissions(TOPIC).get("someone"));
+            List<ThrowingRunnable> writes = List.of(
+                    () -> admin.namespaces().grantPermissionOnNamespace(NAMESPACE, "someone", Set.of(AuthAction.produce)),
+                    () -> admin.topics().grantPermission(TOPIC, "someone", Set.of(AuthAction.produce)),
+                    () -> admin.namespaces().grantPermissionOnTopics(List.of(GrantTopicPermissionOptions.builder().topic(TOPIC).role("someone").actions(Set.of(AuthAction.produce)).build())),
+                    () -> admin.namespaces().grantPermissionOnSubscription(NAMESPACE, "it", Set.of("someone")),
+                    () -> admin.namespaces().revokePermissionsOnNamespace(NAMESPACE, "someone"),
+                    () -> admin.topics().revokePermissions(TOPIC, "someone"),
+                    () -> admin.namespaces().revokePermissionOnTopics(List.of(RevokeTopicPermissionOptions.builder().topic(TOPIC).role("someone").build())),
+                    () -> admin.namespaces().revokePermissionOnSubscription(NAMESPACE, "it", "someone"));
+            for (ThrowingRunnable write : writes) {
+                PulsarAdminException.NotAllowedException refused = assertThrows(PulsarAdminException.NotAllowedException.class, write);
+                assertTrue(refused.getMessage(), refused.getMessage().contains("permission management is disabled"));
+            }
+
+            assertTrue(admin.namespaces().getPermissions(NAMESPACE).isEmpty());
+            assertTrue(admin.topics().getPermissions(TOPIC).isEmpty());
+            assertTrue(admin.namespaces().getPermissionOnSubscription(NAMESPACE).isEmpty());
+
+            // deleting a partitioned topic no longer involves the permission store
+            String partitioned = TOPIC + "-partitioned";
+            admin.topics().createPartitionedTopic(partitioned, 2);
+            admin.topics().deletePartitionedTopic(partitioned);
         }
     }
 

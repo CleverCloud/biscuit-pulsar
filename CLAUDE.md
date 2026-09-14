@@ -80,9 +80,11 @@ facts.
 Special cases: `LOOKUP` additionally injects `PRODUCE` and `CONSUME` operation facts (a token that can
 produce or consume may look up). Tenant operations and function ops are super-user only for every role.
 Cluster, broker and cluster-policy operations (Pulsar 4.x hooks) are super-user only for biscuit roles
-and delegate to the default provider otherwise. Permission management (grant, revoke, get, including
-the 4.x batch variants) is delegated to the default provider. Source/sink
-ops return `null` (unimplemented). Grant/revoke/getPermissions are delegated to the default provider.
+and delegate to the default provider otherwise. Pulsar's own permission management is not used: every grant
+and revoke (namespace, topic, subscription, 4.x batch) fails with the broker's `RestException` 405, built
+reflectively because its JAX-RS base is `javax.ws.rs` on Pulsar 4 and `jakarta.ws.rs` on Pulsar 5. Permission
+reads stay delegated so leftovers remain visible, and `removePermissionsAsync` is a no-op. Source/sink
+ops return `null` (unimplemented).
 
 Run limits (`biscuitRunLimitsMaxFacts`, `...MaxIterations`, `...MaxTimeMillis`) are read in
 `initialize()`, which is what Pulsar calls after the no-arg constructor. An absent or blank key takes the
