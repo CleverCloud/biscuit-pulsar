@@ -35,6 +35,21 @@ The other jars and the configuration stay as they are.
 wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/4.0.1/biscuit-pulsar-4.0.1.jar"
 ```
 
+## From 3.6.x to 4.0.x
+
+Follow [From 3.7.x to 4.0.x](#from-37x-to-40x) below, with these differences, which came with 3.7.0:
+
+- **Java 21 at runtime.** 3.6.x is built for Java 17; 3.7.0 and later are class file 65. On an older JRE
+  the node crash-loops on `UnsupportedClassVersionError`, so move the node to Java 21 first. 3.6.x runs on
+  Java 21 too, so that step can be done on its own.
+- **Token signatures are checked when a client connects.** 3.6.x only parsed the token at authentication
+  and verified its signature later, at authorization, so a token with a bad signature could connect and was
+  refused on its first authorized operation. It is now refused at connection. Valid tokens are not affected.
+- **Consumers restricted to a subscription work.** A token whose checks name a subscription was refused by
+  3.6.x; it now authorizes that subscription. Tokens without a subscription check behave as before.
+- **Permission reads answer.** 3.6.x had none, so Pulsar Manager's permission views failed.
+- The jars to remove are the same set, with `biscuit-pulsar-3.6.1.jar` in place of `biscuit-pulsar-3.7.1.jar`.
+
 ## From 3.7.x to 4.0.x
 
 4.0.x changes what must be installed on the Pulsar nodes, and requires Pulsar 4.x. Tokens, rights and
@@ -71,7 +86,7 @@ Everything below applies to every node where the plugin is installed: brokers, a
 
 1. Stop the node.
 2. In `pulsar/lib`, remove the jars installed for 3.7.x:
-   - `biscuit-pulsar-3.7.1.jar`
+   - `biscuit-pulsar-3.7.1.jar` (or `biscuit-pulsar-3.6.1.jar`)
    - the biscuit-java jar: `biscuit-3.0.1.jar`, or `biscuit-java-*.jar` if it came from the old README script
    - `vavr-0.10.3.jar`
    - `protobuf-java-3.25.0.jar`. Pulsar 4 ships its own protobuf. Keep Pulsar's jar, whose name starts
