@@ -48,7 +48,9 @@ Follow [From 3.7.x to 4.0.x](#from-37x-to-40x) below, with these differences, wh
 - **Consumers restricted to a subscription work.** A token whose checks name a subscription was refused by
   3.6.x; it now authorizes that subscription. Tokens without a subscription check behave as before.
 - **Permission reads answer.** 3.6.x had none, so Pulsar Manager's permission views failed.
-- The jars to remove are the same set, with `biscuit-pulsar-3.6.1.jar` in place of `biscuit-pulsar-3.7.1.jar`.
+- **Different protobuf jar.** 3.6.x installed `protobuf-java-3.16.3.jar`, not `protobuf-java-3.25.0.jar`. It
+  must be removed too, or it stays in `pulsar/lib` next to Pulsar 4's own protobuf.
+- The other jars to remove are the same, with `biscuit-pulsar-3.6.1.jar` in place of `biscuit-pulsar-3.7.1.jar`.
 
 ## From 3.7.x to 4.0.x
 
@@ -85,12 +87,12 @@ Everything below applies to every node where the plugin is installed: brokers, a
 ### Upgrade a node
 
 1. Stop the node.
-2. In `pulsar/lib`, remove the jars installed for 3.7.x:
+2. In `pulsar/lib`, remove the jars installed for 3.7.x or 3.6.x:
    - `biscuit-pulsar-3.7.1.jar` (or `biscuit-pulsar-3.6.1.jar`)
    - the biscuit-java jar: `biscuit-3.0.1.jar`, or `biscuit-java-*.jar` if it came from the old README script
    - `vavr-0.10.3.jar`
-   - `protobuf-java-3.25.0.jar`. Pulsar 4 ships its own protobuf. Keep Pulsar's jar, whose name starts
-     with `com.google.protobuf-`.
+   - `protobuf-java-3.25.0.jar` (`protobuf-java-3.16.3.jar` from 3.6.x). Pulsar 4 ships its own protobuf.
+     Keep Pulsar's jar, whose name starts with `com.google.protobuf-`.
 
    `eddsa-0.3.0.jar` is unchanged and can stay.
 3. Install the 4.0.0 jars:
@@ -126,6 +128,7 @@ Everything below applies to every node where the plugin is installed: brokers, a
 ### Roll back
 
 Stop the node, put the 3.7.1 jars back, including `protobuf-java-3.25.0.jar` if you had it, and restart.
+From 3.6.x, put back `biscuit-pulsar-3.6.1.jar` and `protobuf-java-3.16.3.jar` instead.
 There is no data or metadata migration.
 
 ### Applications using the client class
