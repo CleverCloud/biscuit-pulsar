@@ -12,6 +12,9 @@
 Since 4.0.0 the plugins require Pulsar **4.x** brokers (they implement the cluster/broker
 authorization hooks Pulsar 4.0 introduced, so the classes no longer load on 3.x).
 
+Run at least Pulsar 4.0.14, 4.2.5 or 5.0.0: earlier brokers have authorization bugs that biscuit tokens cannot
+block (October 2026 advisories, see [UPGRADING.md](UPGRADING.md#pulsar-4014-on-the-nodes-october-2026-security-release)).
+
 Upgrading from 3.7.x: follow [UPGRADING.md](UPGRADING.md).
 
 ## Configuration
@@ -96,8 +99,8 @@ PulsarClient client = PulsarClient.builder()
 # unit tests + integration tests (a real Pulsar broker via Testcontainers, needs Docker) + build
 mvn clean install
 
-# integration tests against another broker image (CI runs 4.0.4, 4.0.13, 4.2.4 and a 5.x canary)
-mvn clean install -Dpulsar.image=apachepulsar/pulsar:4.2.4
+# integration tests against another broker image (CI runs 4.0.4, 4.0.14, 4.2.5 and 5.0.0)
+mvn clean install -Dpulsar.image=apachepulsar/pulsar:4.0.14
 
 # unit tests only
 mvn clean install -DskipITs
