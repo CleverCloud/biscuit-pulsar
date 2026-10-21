@@ -18,7 +18,7 @@ mvn clean install -Dmaven.test.skip=true   # build only
 mvn test                                   # unit tests only
 mvn test -Dtest=AuthorizationProviderBiscuitTest                          # one test class
 mvn test -Dtest=AuthorizationProviderBiscuitTest#testAccessOnlyToValidData # one test method
-mvn verify -Dpulsar.image=apachepulsar/pulsar:4.2.4   # integration tests against a given broker image
+mvn verify -Dpulsar.image=apachepulsar/pulsar:4.2.5   # integration tests against a given broker image
 mvn verify -Dit.test=PulsarBrokerIT#rootTokenIsSuperUser  # one integration test
 ```
 
@@ -26,7 +26,7 @@ Integration tests are the `*IT.java` classes, run by failsafe after packaging: `
 Pulsar standalone container (Testcontainers) with the built jar and the README's lib jars copied into
 `/pulsar/lib`, both providers enabled through `PULSAR_PREFIX_*` env overrides, and a revocation list at
 `/etc/biscuit/revocation_list.hex.conf`. CI runs it as a matrix (production image, latest 4.0 patch,
-latest release) plus an allowed-to-fail canary on the next major's milestone.
+latest 4.x release, latest 5.x release); there is no canary job until a 6.0 milestone exists.
 
 Tests are JUnit 4 (`org.junit.Test`), with AssertJ and Mockito available. There is no linter; the
 compiler runs with `-Xlint:all` so watch for new warnings. The compiler is also configured with
@@ -124,4 +124,4 @@ Pulsar client `Authentication` that sends the biscuit as command data and as an
 - Changes that affect what operators install or configure go in `UPGRADING.md`, per version.
 - `pulsar.version` drives the `pulsar-client`, `pulsar-common` and `pulsar-broker-common` artifacts.
 - The provider overrides the cluster/broker authorization hooks added in Pulsar 4.0, so the built jar
-  only loads on 4.x brokers (verified on 4.0.4 and 4.2.4; 3.x fails with `NoClassDefFoundError`).
+  only loads on 4.x and later brokers (verified on 4.0.4, 4.0.14, 4.2.5 and 5.0.0; 3.x fails with `NoClassDefFoundError`).
