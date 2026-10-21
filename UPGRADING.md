@@ -1,5 +1,55 @@
 # Upgrading
 
+## Pulsar 4.0.14 on the nodes (October 2026 security release)
+
+Pulsar 4.0.14 fixes broker-side authorization bugs that biscuit tokens cannot block, because the broker either
+does not call the authorization provider or calls it with the wrong question. On Pulsar 4.0.13 and earlier:
+
+- [CVE-2026-105937](https://pulsar.apache.org/security/CVE-2026-105937/): a token allowed `create_topic` in its
+  own namespace can create a shadow topic of a topic in any other tenant, read its retained messages and delete
+  its ledgers.
+- [CVE-2026-105934](https://pulsar.apache.org/security/CVE-2026-105934/): a token allowed to produce or consume
+  on a partitioned topic can truncate it, skipping every subscription's backlog and deleting old ledgers.
+- [CVE-2026-105926](https://pulsar.apache.org/security/CVE-2026-105926/): any valid token can read the schema
+  of any topic, or register a new schema version on it, through the binary protocol.
+
+The plugin does not change: keep `biscuit-pulsar-4.0.1.jar` and the other jars, and the configuration. The 4.0.1
+jars pass the integration tests on Pulsar 4.0.14, 4.2.5 and 5.0.0.
+
+### Before you upgrade
+
+Shadow topics are disabled by default from 4.0.14 (`enableShadowTopics=false`): the broker no longer creates or
+loads them. While the nodes still run the old version, look for topics that have a shadow source:
+
+```bash
+for tenant in $(pulsar-admin tenants list); do
+  for ns in $(pulsar-admin namespaces list "$tenant"); do
+    for topic in $(pulsar-admin topics list "$ns" | grep '^persistent://'); do
+      source=$(pulsar-admin topics get-shadow-source "$topic" 2>/dev/null)
+      [ -n "$source" ] && [ "$source" != "null" ] && echo "$topic <- $source"
+    done
+  done
+done
+```
+
+A shadow topic whose source is in another tenant was probably created through CVE-2026-105937: read the
+source tenant's data as exposed, and delete the shadow topic after the upgrade. If you use shadow topics on
+purpose, set `enableShadowTopics=true` in `broker.conf` on every broker; a shadow source in another tenant then
+requires the super-user.
+
+### Upgrade a node
+
+Upgrade the brokers to Pulsar 4.0.14 one at a time, the usual way, and the proxies if they run Pulsar 4.0.x.
+Check the plugin's lines in the log at startup, as in step 4 of [From 3.7.x to 4.0.x](#upgrade-a-node-2).
+
+### What changes for users
+
+- **Schemas over the binary protocol**: reading a topic's schema needs the right to look it up, so to produce
+  to it or consume from it; registering a schema needs `produce` on the topic. Clients that use the topic
+  already have these rights.
+- **Truncating a partitioned topic** needs the super-user, as truncating a non-partitioned topic already did.
+- **Shadow topics** answer `405 Shadow topics are disabled`, unless `enableShadowTopics` is on.
+
 ## From 4.0.0 to 4.0.1
 
 4.0.1 stops managing Pulsar's own permissions, because authorization is carried by the biscuit tokens. Every
@@ -80,7 +130,7 @@ Everything below applies to every node where the plugin is installed: brokers, a
 
    A key that is absent or blank keeps its old default. A value you set, such as the 30 ms from the
    README's example, now takes effect. If authorization times out, it is denied.
-4. **Check for stored Pulsar permissions**, with the commands of [From 4.0.0 to 4.0.1](#before-you-upgrade).
+4. **Check for stored Pulsar permissions**, with the commands of [From 4.0.0 to 4.0.1](#before-you-upgrade-1).
    3.7.1 accepted grants but could not revoke namespace or topic grants, and 4.0.1 refuses both. If one is stored, upgrade to 4.0.0
    first, revoke it there, then move to 4.0.1.
 
