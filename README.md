@@ -131,9 +131,9 @@ Commit and push.
 
 Publish requires following secrets:
 
-* `OSSRH_USERNAME` the Sonatype username
-* `OSSRH_TOKEN` the Sonatype token
-* `OSSRH_GPG_SECRET_KEY` the gpg private key used to sign packages
-* `OSSRH_GPG_SECRET_KEY_PASSWORD` the gpg private key password
+* `CENTRAL_USERNAME` the Sonatype Central Portal token username
+* `CENTRAL_TOKEN` the Sonatype Central Portal token password
+* `CENTRAL_GPG_SECRET_KEY` the gpg private key used to sign packages
+* `CENTRAL_GPG_SECRET_KEY_PASSWORD` the gpg private key password
 
 These are stored in GitHub organisation's secrets.

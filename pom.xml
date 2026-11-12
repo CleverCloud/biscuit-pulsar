@@ -5,7 +5,7 @@
   <artifactId>biscuit-pulsar</artifactId>
   <packaging>jar</packaging>
   <name>biscuit-pulsar</name>
-  <version>4.1.0-SNAPSHOT</version>
+  <version>4.0.4</version>
   <url>https://github.com/clevercloud/biscuit-pulsar</url>
 
   <description>Biscuit authentication/authorization plugins for Apache Pulsar</description>
@@ -307,6 +307,7 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>${mockito.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
