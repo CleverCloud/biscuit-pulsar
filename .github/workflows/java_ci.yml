@@ -13,14 +13,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: "3.x"
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v6
         with:
           java-version: "21"
           distribution: "temurin"
@@ -44,9 +40,9 @@ jobs:
           - "5.0.0"   # latest release
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v6
         with:
           java-version: "21"
           distribution: "temurin"
