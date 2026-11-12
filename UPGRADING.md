@@ -1,5 +1,17 @@
 # Upgrading
 
+## From 4.0.1 to 4.0.2
+
+4.0.2 has the same code as 4.0.1. It is built against Pulsar 4.2.5 instead of 4.2.4, and ships the
+documentation for Pulsar 4.0.14 below. On the nodes, replacing `biscuit-pulsar-4.0.1.jar` with
+`biscuit-pulsar-4.0.2.jar` is optional; the other jars and the configuration are unchanged.
+
+```bash
+wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/4.0.2/biscuit-pulsar-4.0.2.jar"
+```
+
+Applications using the client class: the artifact now depends on `pulsar-client` 4.2.5.
+
 ## Pulsar 4.0.14 on the nodes (October 2026 security release)
 
 Pulsar 4.0.14 fixes broker-side authorization bugs that biscuit tokens cannot block, because the broker either
@@ -13,8 +25,8 @@ does not call the authorization provider or calls it with the wrong question. On
 - [CVE-2026-105926](https://pulsar.apache.org/security/CVE-2026-105926/): any valid token can read the schema
   of any topic, or register a new schema version on it, through the binary protocol.
 
-The plugin does not change: keep `biscuit-pulsar-4.0.1.jar` and the other jars, and the configuration. The 4.0.1
-jars pass the integration tests on Pulsar 4.0.14, 4.2.5 and 5.0.0.
+The plugin does not change: keep `biscuit-pulsar-4.0.1.jar` (or 4.0.2) and the other jars, and the configuration.
+The 4.0.1 and 4.0.2 jars pass the integration tests on Pulsar 4.0.14, 4.2.5 and 5.0.0.
 
 ### Before you upgrade
 
@@ -105,7 +117,7 @@ Follow [From 3.7.x to 4.0.x](#from-37x-to-40x) below, with these differences, wh
 ## From 3.7.x to 4.0.x
 
 4.0.x changes what must be installed on the Pulsar nodes, and requires Pulsar 4.x. Tokens, rights and
-configuration keys are unchanged, so nodes can be upgraded one at a time. Go straight to 4.0.1, unless a
+configuration keys are unchanged, so nodes can be upgraded one at a time. Go straight to 4.0.2, unless a
 Pulsar permission is stored (step 4 below).
 
 Everything below applies to every node where the plugin is installed: brokers, and proxies if their
@@ -132,7 +144,7 @@ Everything below applies to every node where the plugin is installed: brokers, a
    README's example, now takes effect. If authorization times out, it is denied.
 4. **Check for stored Pulsar permissions**, with the commands of [From 4.0.0 to 4.0.1](#before-you-upgrade-1).
    3.7.1 accepted grants but could not revoke namespace or topic grants, and 4.0.1 refuses both. If one is stored, upgrade to 4.0.0
-   first, revoke it there, then move to 4.0.1.
+   first, revoke it there, then move to 4.0.2.
 
 ### Upgrade a node
 
@@ -145,12 +157,12 @@ Everything below applies to every node where the plugin is installed: brokers, a
      Keep Pulsar's jar, whose name starts with `com.google.protobuf-`.
 
    `eddsa-0.3.0.jar` is unchanged and can stay.
-3. Install the 4.0.0 jars:
+3. Install the 4.0.x jars:
 
    ```bash
    wget -P "pulsar/lib" "https://repo1.maven.org/maven2/io/vavr/vavr/0.10.7/vavr-0.10.7.jar"
    wget -P "pulsar/lib" "https://repo1.maven.org/maven2/org/biscuitsec/biscuit/4.0.1/biscuit-4.0.1.jar"
-   wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/4.0.1/biscuit-pulsar-4.0.1.jar"
+   wget -P "pulsar/lib" "https://repo1.maven.org/maven2/com/clever-cloud/biscuit-pulsar/4.0.2/biscuit-pulsar-4.0.2.jar"
    ```
 
 4. Start the node and check its log for these lines:
@@ -184,5 +196,5 @@ There is no data or metadata migration.
 ### Applications using the client class
 
 `AuthenticationBiscuit` is unchanged. The artifact now depends on `org.biscuitsec:biscuit` 4.0.1 and
-`pulsar-client` 4.2.4, so align your own Pulsar client version or exclude it. Java 21 is required, as
+`pulsar-client` 4.2.5 (4.2.4 up to 4.0.1), so align your own Pulsar client version or exclude it. Java 21 is required, as
 since 3.7.0.
