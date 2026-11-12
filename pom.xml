@@ -5,7 +5,7 @@
   <artifactId>biscuit-pulsar</artifactId>
   <packaging>jar</packaging>
   <name>biscuit-pulsar</name>
-  <version>4.1.0-SNAPSHOT</version>
+  <version>4.0.3</version>
   <url>https://github.com/clevercloud/biscuit-pulsar</url>
 
   <description>Biscuit authentication/authorization plugins for Apache Pulsar</description>
@@ -19,7 +19,7 @@
     <maven-gpg.version>3.2.8</maven-gpg.version>
     <maven-source.version>3.4.0</maven-source.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
-    <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
+    <central-publishing-maven-plugin.version>0.12.0</central-publishing-maven-plugin.version>
     <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
     <maven-failsafe.version>3.6.0</maven-failsafe.version>
     <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
